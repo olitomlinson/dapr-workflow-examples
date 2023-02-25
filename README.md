@@ -9,6 +9,14 @@
 `dapr run dotnet run`
 
 
+## To run in Kubernetes (via Docker Desktop)
+
+`dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
+
+`dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
+
+---
+
 ### Start a workflow 
 
 POST `http://localhost:{app-port}/Workflow` 
@@ -19,8 +27,3 @@ This will respond with a workflow Id i.e. `12345678` (Note that this is not goin
 
 GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
 
-## To run in Kubernetes (via Docker Desktop)
-
-`dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
-
-`dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
