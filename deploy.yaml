@@ -1,0 +1,26 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: workflow
+  labels:
+    app: workflow
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workflow
+  template:
+    metadata:
+      labels:
+        app: workflow
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "workflow"
+        dapr.io/app-port: "5111"
+    spec:
+      containers:
+      - name: workflow
+        image: workflowtest:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5111
