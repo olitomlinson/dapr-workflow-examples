@@ -1,5 +1,11 @@
 # dapr-workflow-examples
 
+## Pre-requisites
+
+- Dapr installed locally for stand-alone mode (`dapr run`)
+- Dapr installed in a kubernetes cluster
+- A suitable Dapr State Store component installed in the kubernetes cluster. Must be a State Store component which is compatible with Dapr Actors i.e. [Redis](https://docs.dapr.io/getting-started/tutorials/configure-state-pubsub/#step-1-create-a-redis-store)
+
 ## To run locally
 
 *This has only been tested on MacOS with VS Code*

@@ -36,6 +36,26 @@
                 "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
             ],
             "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "bridge-to-kubernetes.resource",
+            "type": "bridge-to-kubernetes.resource",
+            "resource": "workflow-dapr",
+            "resourceType": "service",
+            "ports": [
+                5111
+            ],
+            "targetCluster": "docker-desktop",
+            "targetNamespace": "default",
+            "useKubernetesServiceEnvironmentVariables": false
+        },
+        {
+            "label": "bridge-to-kubernetes.compound",
+            "dependsOn": [
+                "bridge-to-kubernetes.resource",
+                "build"
+            ],
+            "dependsOrder": "sequence"
         }
     ]
 }
