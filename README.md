@@ -14,6 +14,18 @@
 
 `dapr run dotnet run`
 
+### Start a workflow locally
+
+POST `http://localhost:{app-port}/Workflow`
+
+> This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
+
+### Check the status of the workflow locally
+
+GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
+
+---
+
 
 ## To run in Kubernetes (via Docker Desktop)
 
@@ -23,13 +35,13 @@
 
 ---
 
-### Start a workflow 
+### Start a workflow in Kubernetes
 
-POST `http://localhost:{app-port}/Workflow` 
+POST `http://localhost:{dapr-http-port}/v1.0/invoke/workflow/method/Workflow` 
 
-This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
+This will respond with a workflow Id i.e. `12345678` 
 
-### Check the status of the workflow 
+### Check the status of the workflow in kubernetes
 
 GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
 
