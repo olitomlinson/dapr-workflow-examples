@@ -33,7 +33,6 @@ GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matt
 
 `dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
 
----
 
 ### Start a workflow in Kubernetes
 
