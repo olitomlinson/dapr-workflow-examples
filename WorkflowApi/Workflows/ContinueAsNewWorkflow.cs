@@ -10,10 +10,9 @@ namespace WorkflowConsoleApp.Workflows
         {
             string workflowId = context.InstanceId;
 
-            // This is commented out as you currently can't use CallActivityAsync in combination with ContinueAsNew API
-            // await context.CallActivityAsync(
-            //     nameof(NotifyActivity),
-            //     new Notification($"{payload.Count} - Notificaiton Sent {workflowId} for  {payload.RandomData} at ${payload.Count}"));
+            await context.CallActivityAsync(
+                nameof(NotifyActivity),
+                new Notification($"{payload.Count} - Notificaiton Sent {workflowId} for  {payload.RandomData} at ${payload.Count}"));
 
             if (payload.Count > 10)
                 return true;
