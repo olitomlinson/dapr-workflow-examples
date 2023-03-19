@@ -44,3 +44,24 @@ This will respond with a workflow Id i.e. `12345678`
 
 GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
 
+---
+
+## To run via Docker Compose
+
+Build the image first 
+
+`dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
+
+Then you can deploy via Docker Compose
+
+`dapr-workflow-examples % docker-compose up`
+
+### Start a workflow
+
+POST `http://localhost:5111/Workflow`
+
+> This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
+
+### Check the status of the workflow in kubernetes
+
+TODO

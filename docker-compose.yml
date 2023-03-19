@@ -1,0 +1,54 @@
+version: '3.4'
+services:
+  ############################
+  # Node app + Dapr sidecar
+  ############################
+  workflowapp:
+    image: workflowtest:latest
+    build:
+      context: .
+      dockerfile: WorkflowApi/Dockerfile
+    ports:
+      - "5111:5111"
+      - "3500:3500"
+    depends_on:
+      - redis
+      - placement
+    networks:
+      - workflow-dapr
+  workflowapp-dapr:
+    image: "daprio/daprd:edge"
+    command: ["./daprd",
+     "-app-id", "workflowapp",
+     "-app-port", "5111",
+     "-dapr-http-port", "3500",
+     "-placement-host-address", "placement:50006",
+     "-dapr-grpc-port", "4001",
+     "-components-path", "/components",
+     "-log-level","debug"]
+    volumes:
+        - "./components/:/components"
+    depends_on:
+      - workflowapp
+    network_mode: "service:workflowapp"
+  ############################
+  # Dapr placement service
+  ############################
+  placement:
+    image: "daprio/dapr"
+    command: ["./placement", "-port", "50006"]
+    ports:
+      - "50006:50006"
+    networks:
+      - workflow-dapr
+  ############################
+  # Redis state store
+  ############################
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6380:6379"
+    networks:
+      - workflow-dapr
+networks:
+    workflow-dapr:
