@@ -14,13 +14,13 @@
 
 `dapr run dotnet run`
 
-### Start a workflow locally
+### Start a workflow
 
 POST `http://localhost:{app-port}/Workflow`
 
 > This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
 
-### Check the status of the workflow locally
+### Check the status of the workflow
 
 GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
 
@@ -34,13 +34,13 @@ GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matt
 `dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
 
 
-### Start a workflow in Kubernetes
+### Start a workflow
 
 POST `http://localhost:{dapr-http-port}/v1.0/invoke/workflow/method/Workflow` 
 
 This will respond with a workflow Id i.e. `12345678` 
 
-### Check the status of the workflow in kubernetes
+### Check the status of the workflow
 
 GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
 
@@ -62,6 +62,6 @@ POST `http://localhost:5111/Workflow`
 
 > This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
 
-### Check the status of the workflow in kubernetes
+### Check the status of the workflow
 
-TODO
+GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-put-here/12345678`

@@ -17,7 +17,7 @@ services:
     networks:
       - workflow-dapr
   workflowapp-dapr:
-    image: "daprio/daprd:edge"
+    image: "daprio/daprd:latest"
     command: ["./daprd",
      "-app-id", "workflowapp",
      "-app-port", "5111",
