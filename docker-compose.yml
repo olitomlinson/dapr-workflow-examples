@@ -4,7 +4,7 @@ services:
   # Node app + Dapr sidecar
   ############################
   workflowapp:
-    image: workflowtest:latest
+    # image: workflowtest:latest
     build:
       context: .
       dockerfile: WorkflowApi/Dockerfile
