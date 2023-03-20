@@ -52,9 +52,9 @@ Build the image first
 
 `dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
 
-Then you can deploy via Docker Compose
+Then deploy via Docker Compose
 
-`dapr-workflow-examples % docker-compose up`
+`dapr-workflow-examples % docker compose up`
 
 ### Start a workflow
 
@@ -65,3 +65,39 @@ POST `http://localhost:5111/Workflow`
 ### Check the status of the workflow
 
 GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-put-here/12345678`
+
+---
+
+## To debug within container via Docker Compose (VS Code)
+
+Install docker VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker`
+Install c# VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp`
+
+Build the image first (if you've changed any of the source, of course)
+
+`dapr-workflow-examples % docker compose build`
+
+Then deploy via Docker Compose
+
+`dapr-workflow-examples % docker compose up`
+
+Debug via the Task `Docker .NET Attach (Preview)`
+
+<img width="394" alt="image" src="https://user-images.githubusercontent.com/4224880/226457356-00d13f1d-d16a-481c-a126-663a84af7970.png">
+
+Then chose the following when prompted
+
+`dapr-workflow-examples`
+`dapr-workflow-examples-workflowapp`
+
+choose `Yes` at the prompt
+
+<img width="346" alt="image" src="https://user-images.githubusercontent.com/4224880/226458631-13daa7e2-5013-4637-a4b8-acf2f8aded22.png">
+
+Debug points in the code can now be reached
+
+<img width="1019" alt="image" src="https://user-images.githubusercontent.com/4224880/226459366-458408a8-017c-4a37-b89e-681f8668014e.png">
+
+
+
+
