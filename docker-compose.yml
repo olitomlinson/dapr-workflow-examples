@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   ############################
-  # Node app + Dapr sidecar
+  # Workflow App + Dapr sidecar
   ############################
   workflowapp:
     # image: workflowtest:latest
