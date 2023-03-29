@@ -40,7 +40,7 @@ Deploy the workflow image to the cluster via `kubectl` :
 
 ### Start a workflow
 
-POST `http://localhost:{dapr-http-port}/v1.0/invoke/workflow/method/Workflow` 
+POST `http://localhost:{app-port}/v1.0/invoke/workflow/method/Workflow` 
 
 This will respond with a workflow Id i.e. `12345678` 
 
