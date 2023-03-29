@@ -37,6 +37,8 @@ Deploy the workflow image to the cluster via `kubectl` :
 
 `dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
 
+> **Note** Remember to install a suitable Dapr State Store component in the kubernetes cluster. It must be a State Store component which is compatible with Dapr Actors i.e. Redis.
+
 
 ### Start a workflow
 
