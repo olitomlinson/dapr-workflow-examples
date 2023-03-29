@@ -29,7 +29,11 @@ GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matt
 
 ## To run in Kubernetes (via Docker Desktop)
 
+Build the workflow :
+
 `dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
+
+Deploy the workflow image to the cluster via `kubectl` :
 
 `dapr-workflow-examples % kubectl apply -f ./deploy.yaml`
 
@@ -48,11 +52,11 @@ GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matt
 
 ## To run via Docker Compose
 
-Build the image first 
+Build the workflow image : 
 
 `dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
 
-Then deploy via Docker Compose
+Deploy the workflow image via Docker Compose :
 
 `dapr-workflow-examples % docker compose up`
 
