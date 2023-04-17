@@ -56,7 +56,7 @@ GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matt
 
 Build the workflow image : 
 
-`dapr-workflow-examples % docker build -f WorkflowApi/Dockerfile -t workflowtest .`
+`dapr-workflow-examples % docker compose build`
 
 Deploy the workflow image via Docker Compose :
 
