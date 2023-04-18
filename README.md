@@ -6,7 +6,7 @@ As it stands Dapr Workflows can
 - Call [Activities](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#workflow-activities) to perform work
 - Can [perform an eternal loop](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#infinite-loops-and-eternal-workflows) which exits on condition being met.
 
-In this example, when the `/start` endpoint is called [here](https://github.com/olitomlinson/dapr-workflow-examples/blob/0a0d54687aa43c32e630e6fd0def0ce49d933dbe/Client/Program.cs#L23), a new Workflow instance is scheduled to run. The workflow will call the same Activity 11 times via an eternal loop [here](https://github.com/olitomlinson/dapr-workflow-examples/blob/0a0d54687aa43c32e630e6fd0def0ce49d933dbe/Workflow/Workflows/ContinueAsNewWorkflow.cs#L12), at which point the Workflow exits successfuly and is marked as completed.
+In this example, when the `/start` endpoint is called [here](https://github.com/olitomlinson/dapr-workflow-examples/blob/0a0d54687aa43c32e630e6fd0def0ce49d933dbe/Client/Program.cs#L23), a new Workflow instance is scheduled to run. The workflow will call the same Activity 11 times via an eternal loop [here](https://github.com/olitomlinson/dapr-workflow-examples/blob/0a0d54687aa43c32e630e6fd0def0ce49d933dbe/Workflow/Workflows/ContinueAsNewWorkflow.cs#L12), at which point the Workflow exits successfuly and is marked as completed [here](https://github.com/olitomlinson/dapr-workflow-examples/blob/0a0d54687aa43c32e630e6fd0def0ce49d933dbe/Workflow/Workflows/ContinueAsNewWorkflow.cs#L17).
 
 At any point in time (while the Workflow is running, or after it has completed) you can check the status of that Workflow instance.
 
