@@ -1,12 +1,14 @@
 # dapr-workflow-examples
 
-The purpose of this sample application is to simply demonstrate the capabilities of https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/ as they are enhanced over time.
+The purpose of this sample application is to simply demonstrate the capabilities of [Dapr Workflows](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/) as they are enhanced over time by the Dapr Team and Open Source community
 
 As it stands Dapr Workflows can 
 - Call [Activities](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#workflow-activities) to perform work
 - Can [perform an eternal loop](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#infinite-loops-and-eternal-workflows) which exits on condition being met.
 
-In this example, the same Activity is called 11 times via an eternal loop, and then the Workflow exits successfuly and is marked as completed.
+In this example, when the `/start` endpoint is called, a new Workflow instance is scheduled to run. The workflow will call the same Activity 11 times via an eternal loop, at which point the Workflow exits successfuly and is marked as completed.
+
+At any point in time (while the Workflow is running, or after it has completed) you can check the status of that Workflow instance.
 
 This sample application utilises 2 services (`Client` and `Workflow`) this is purely to demonstrate the Service to Service Invocation, as well as Dapr Workflows. If desired, you could simply call the `/start` endpoint on the `Workflow` service directly.
 
