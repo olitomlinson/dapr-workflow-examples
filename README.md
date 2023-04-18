@@ -1,10 +1,20 @@
 # dapr-workflow-examples
 
+The purpose of this sample application is to simply demonstrate the capabilities of https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-overview/ as they are enhanced over time.
+
+As it stands Dapr Workflows can 
+- Call [Activities](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#workflow-activities) to perform work
+- Can [perform an eternal loop](https://docs.dapr.io/developing-applications/building-blocks/workflow/workflow-features-concepts/#infinite-loops-and-eternal-workflows) which exits on condition being met.
+
+In this example, the same Activity is called 11 times via an eternal loop, and then the Workflow exits successfuly and is marked as completed.
+
+This sample application utilises 2 services (`Client` and `Workflow`) this is purely to demonstrate the Service to Service Invocation, as well as Dapr Workflows. If desired, you could simply call the `/start` endpoint on the `Workflow` service directly.
+
 The recommended way to run this sample application is via Docker Compose due to its ease of use.
 
 The diagram below shows at high-level the various components and services that are deployed via Docker Compose.
 
-This sample application utilises 2 services (`Client` and `Workflow`) this is purely to demonstrate the Service to Service Invocation, as well as Dapr Workflows. If desired, you could simply call the `/start` endpoint on the `Workflow` service directly.
+![image](https://user-images.githubusercontent.com/4224880/232878508-bcbfa5ce-6c0b-4b97-b573-bb489197005c.png)
 
 ## To run via Docker Compose
 
@@ -20,18 +30,18 @@ Deploy the workflow image via Docker Compose :
 
 POST `http://localhost:5112/start`
 
-> This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
+> This will respond with a workflow Id i.e. `123456` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
 
 ### Check the status of the workflow
 
-GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/_/12345678`
+GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/_/123456`
 
 ---
 
 ## To debug within container via Docker Compose (VS Code)
 
-Install docker VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker`
-Install c# VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp`
+- Install docker VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker`
+- Install c# VS Code extension `https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp`
 
 Build the image first (if you've changed any of the source, of course)
 
@@ -47,8 +57,8 @@ Debug via the Task `Docker .NET Attach (Preview)`
 
 Then chose the following when prompted
 
-`dapr-workflow-examples`
-`dapr-workflow-examples-workflowapp`
+`dapr-workflow-examples` then...
+`dapr-workflow-examples-client-app` or `dapr-workflow-examples-workflow-app`
 
 choose `Yes` at the prompt
 
@@ -74,13 +84,13 @@ Debug points in the code can now be reached
 
 ### Start a workflow
 
-POST `http://localhost:{dapr-app-port}/Workflow`
+POST `http://localhost:{dapr-app-port}/start`
 
 > This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
 
 ### Check the status of the workflow
 
-GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
+GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/_/123456`
 
 ---
 
@@ -103,13 +113,13 @@ Deploy the workflow image to the cluster via `kubectl` :
 
 ### Start a workflow
 
-POST `http://localhost:{app-port}/v1.0/invoke/workflow/method/Workflow` 
+POST `http://localhost:{app-port}/v1.0/invoke/workflow/method/start` 
 
-This will respond with a workflow Id i.e. `12345678` 
+This will respond with a workflow Id i.e. `123456` 
 
 ### Check the status of the workflow
 
-GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/it-doesnt-matter-what-you-put-here/12345678`
+GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/_/123456`
 
 
 
