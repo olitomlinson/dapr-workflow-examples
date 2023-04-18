@@ -11,16 +11,16 @@ USER appuser
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["WorkflowApi/WorkflowApi.csproj", "WorkflowApi/"]
-RUN dotnet restore "WorkflowApi/WorkflowApi.csproj"
+COPY ["Client/Client.csproj", "Client/"]
+RUN dotnet restore "Client/Client.csproj"
 COPY . .
-WORKDIR "/src/WorkflowApi"
-RUN dotnet build "WorkflowApi.csproj" -c Release -o /app/build
+WORKDIR "/src/Client"
+RUN dotnet build "Client.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "WorkflowApi.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Client.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "WorkflowApi.dll"]
+ENTRYPOINT ["dotnet", "Client.dll"]

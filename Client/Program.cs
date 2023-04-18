@@ -1,19 +1,11 @@
 using Dapr.Workflow;
-using WorkflowConsoleApp.Activities;
-using WorkflowConsoleApp.Workflows;
+using Dapr.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDaprClient();
-builder.Services.AddDaprWorkflow(options =>
-    {
-        options.RegisterWorkflow<ContinueAsNewWorkflow>();
-        options.RegisterActivity<NotifyActivity>();
-    });
 
 // Add services to the container.
-
-builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -26,10 +18,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+app.MapPost("/start", async (DaprClient daprClient) =>
+{
+    var response = await daprClient.InvokeMethodAsync<CreateWorkflowResponse>("workflow", "start");
+    app.Logger.LogInformation("id: {0}", response.Id);
+    return response.Id;
+}).Produces<string>();
 
 app.Run();
+
+public class CreateWorkflowResponse
+{
+    public string Id { get; set; }
+}

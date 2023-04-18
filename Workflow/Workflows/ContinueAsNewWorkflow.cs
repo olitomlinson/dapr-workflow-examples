@@ -1,6 +1,5 @@
 using Dapr.Workflow;
 using WorkflowConsoleApp.Activities;
-using WorkflowConsoleApp.Models;
 
 namespace WorkflowConsoleApp.Workflows
 {

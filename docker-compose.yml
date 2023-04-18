@@ -1,12 +1,12 @@
 version: '3.4'
 services:
   ############################
-  # App + Dapr sidecar
+  # Workflow App + Dapr sidecar
   ############################
-  app:
+  workflow-app:
     build:
       context: .
-      dockerfile: WorkflowApi/Dockerfile
+      dockerfile: Workflow/Dockerfile
     ports:
       - "5111:5111"
       - "3500:3500"
@@ -15,10 +15,10 @@ services:
       - placement
     networks:
       - network
-  app-dapr:
+  workflow-dapr:
     image: "daprio/daprd:latest"
     command: ["./daprd",
-     "-app-id", "app",
+     "-app-id", "workflow",
      "-app-port", "5111",
      "-dapr-http-port", "3500",
      "-placement-host-address", "placement:50006",
@@ -28,8 +28,33 @@ services:
     volumes:
         - "./components/:/components"
     depends_on:
-      - app
-    network_mode: "service:app"
+      - workflow-app
+    network_mode: "service:workflow-app"
+  ############################
+  # Client App + Dapr sidecar
+  ############################
+  client-app:
+    environment:
+      - DAPR_HTTP_PORT=3501
+    build:
+      context: .
+      dockerfile: Client/Dockerfile
+    ports:
+      - "5112:5111"
+      - "3501:3501"
+    networks:
+      - network
+  client-dapr:
+    image: "daprio/daprd:latest"
+    command: ["./daprd",
+    "-app-id", "client",
+    "-app-port", "5111",
+    "-dapr-http-port", "3501",
+    "-dapr-grpc-port", "4002",
+    "-log-level","debug"]
+    depends_on:
+      - client-app
+    network_mode: "service:client-app"
   ############################
   # Dapr placement service
   ############################
