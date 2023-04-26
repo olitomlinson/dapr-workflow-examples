@@ -59,7 +59,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr"
+    image: "daprio/dapr:latest"
     command: ["./placement", "-port", "50006"]
     ports:
       - "50006:50006"
