@@ -1,4 +1,5 @@
 using Dapr.Workflow;
+using Dapr;
 using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
@@ -20,6 +21,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseCloudEvents();
+app.MapSubscribeHandler();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -27,9 +31,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
-app.MapPost("/start", async (DaprClient daprClient, WorkflowEngineClient workflowClient) =>
-{
+app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient daprClient, WorkflowEngineClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -37,25 +39,29 @@ app.MapPost("/start", async (DaprClient daprClient, WorkflowEngineClient workflo
     }
 
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = $"{Guid.NewGuid().ToString()[..8]}";
+    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
-    // Start the workflow using the order ID as the workflow ID
     var result = await workflowClient.ScheduleNewWorkflowAsync(
         name: nameof(ContinueAsNewWorkflow),
         instanceId: workflowId,
         input: orderInfo);
 
-    return new CreateWorkflowResponse(){
+    return new StartWorkflowResponse(){
         Id = result
     };   
-}).Produces<CreateWorkflowResponse>();
+}).Produces<StartWorkflowResponse>();
 
 app.Run();
 
-public class CreateWorkflowResponse
+public record WorkflowPayload(string RandomData, int Count = 0);
+
+public class StartWorklowRequest
 {
     public string Id { get; set; }
 }
 
-public record WorkflowPayload(string RandomData, int Count = 0);
+public class StartWorkflowResponse
+{
+    public string Id {get; set;}
+}

@@ -20,14 +20,32 @@ if (app.Environment.IsDevelopment())
 
 app.MapPost("/start", async (DaprClient daprClient) =>
 {
-    var response = await daprClient.InvokeMethodAsync<CreateWorkflowResponse>("workflow", "start");
-    app.Logger.LogInformation("id: {0}", response.Id);
-    return response.Id;
-}).Produces<string>();
+    var response = await daprClient.InvokeMethodAsync<StartWorkflowResponse>("workflow", "start");
+    app.Logger.LogInformation("start Id: {0}", response.Id);
+    return response;
+}).Produces<StartWorkflowResponse>();
+
+app.MapPost("/startasync", async (DaprClient daprClient) =>
+{
+    var o = new StartWorkflowRequest(){
+        Id = Guid.NewGuid().ToString()
+    };
+    
+    await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowTopic", o);
+    app.Logger.LogInformation("Start Async Id: {0}", o.Id);
+    return new StartWorkflowResponse{
+        Id = o.Id
+    };
+}).Produces<StartWorkflowResponse>();
 
 app.Run();
 
-public class CreateWorkflowResponse
+public class StartWorkflowRequest
+{
+    public string Id {get; set;}
+}
+
+public class StartWorkflowResponse
 {
     public string Id { get; set; }
 }

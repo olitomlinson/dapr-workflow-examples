@@ -10,7 +10,7 @@ In this example, when the `/start` endpoint is called [here](https://github.com/
 
 At any point in time (while the Workflow is running, or after it has completed) you can check the status of that Workflow instance.
 
-This sample application utilises 2 services (`Client` and `Workflow`) this is purely to demonstrate the Service to Service Invocation, as well as Dapr Workflows. If desired, you could simply call the `/start` endpoint on the `Workflow` service directly.
+This sample application utilises 2 services (`Client` and `Workflow`) this is purely to demonstrate Dapr Service to Service Invocation and Dapr PubSub capabilities, as well as Dapr Workflows. If desired, you can simply call the `/start` endpoint on the `Workflow` service directly.
 
 The recommended way to run this sample application is via Docker Compose due to its ease of use.
 
