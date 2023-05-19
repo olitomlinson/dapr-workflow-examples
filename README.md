@@ -36,7 +36,7 @@ POST `http://localhost:5112/start`
 
 ### Check the status of the workflow
 
-GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/_/123456`
+GET `http://localhost:3500/v1.0-alpha1/workflows/dapr/123456`
 
 ---
 
@@ -88,11 +88,11 @@ Debug points in the code can now be reached
 
 POST `http://localhost:{dapr-app-port}/start`
 
-> This will respond with a workflow Id i.e. `12345678` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
+> This will respond with a workflow Id i.e. `123456` (Note that this is not going through the dapr sidecar, but targeting your web server directly)
 
 ### Check the status of the workflow
 
-GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/_/123456`
+GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/123456`
 
 ---
 
@@ -121,7 +121,7 @@ This will respond with a workflow Id i.e. `123456`
 
 ### Check the status of the workflow
 
-GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/_/123456`
+GET `http://localhost:{dapr-http-port}/v1.0-alpha1/workflows/dapr/123456`
 
 
 

@@ -18,7 +18,7 @@ services:
     networks:
       - network
   workflow-dapr:
-    image: "daprio/daprd:latest"
+    image: "daprio/daprd:1.11.0-rc.1"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
@@ -47,7 +47,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:latest"
+    image: "daprio/daprd:1.11.0-rc.1"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -64,7 +64,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:latest"
+    image: "daprio/dapr:1.11.0-rc.1"
     command: ["./placement", "-port", "50006"]
     ports:
       - "50006:50006"
