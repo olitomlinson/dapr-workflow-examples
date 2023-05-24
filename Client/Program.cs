@@ -18,25 +18,57 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/start", async (DaprClient daprClient) =>
+app.MapPost("/start", async (DaprClient daprClient, int? count, bool? async) =>
 {
-    var response = await daprClient.InvokeMethodAsync<StartWorkflowResponse>("workflow", "start");
-    app.Logger.LogInformation("start Id: {0}", response.Id);
-    return response;
-}).Produces<StartWorkflowResponse>();
+    if (!count.HasValue || count.Value < 1 )
+        count = 1;
 
-app.MapPost("/startasync", async (DaprClient daprClient) =>
+    var results = new List<StartWorkflowResponse>();
+
+    var cts = new CancellationTokenSource();
+
+    var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
+
+    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(input, token) => {
+        var request = new StartWorkflowRequest{ Id = $"{input}-{Guid.NewGuid().ToString()[..8]}" };
+        
+        if (async.HasValue && async.Value == true)
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowTopic", request);
+        else
+            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start", request);
+        
+        app.Logger.LogInformation("start Id: {0}", request.Id);
+        
+        results.Add(new StartWorkflowResponse { Index = input, Id = request.Id });
+    });
+    return results;
+}).Produces<List<StartWorkflowResponse>>();
+
+app.MapPost("/startdelay", async (DaprClient daprClient, int? count, bool? async) =>
 {
-    var o = new StartWorkflowRequest(){
-        Id = Guid.NewGuid().ToString()
-    };
-    
-    await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowTopic", o);
-    app.Logger.LogInformation("Start Async Id: {0}", o.Id);
-    return new StartWorkflowResponse{
-        Id = o.Id
-    };
-}).Produces<StartWorkflowResponse>();
+    if (!count.HasValue || count.Value < 1 )
+        count = 1;
+
+    var results = new List<StartWorkflowResponse>();
+
+    var cts = new CancellationTokenSource();
+
+    var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
+
+    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(input, token) => {
+        var request = new StartWorkflowRequest{ Id = $"{input}-{Guid.NewGuid().ToString()[..8]}" };
+        
+        if (async.HasValue && async.Value == true)
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowDelayTopic", request);
+        else
+            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "startdelay", request);
+        
+        app.Logger.LogInformation("start Id: {0}", request.Id);
+        
+        results.Add(new StartWorkflowResponse { Index = input, Id = request.Id });
+    });
+    return results;
+}).Produces<List<StartWorkflowResponse>>();
 
 app.Run();
 
@@ -47,5 +79,6 @@ public class StartWorkflowRequest
 
 public class StartWorkflowResponse
 {
+    public int Index { get; set; }
     public string Id { get; set; }
 }

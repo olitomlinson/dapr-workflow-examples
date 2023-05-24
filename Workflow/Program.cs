@@ -10,7 +10,9 @@ builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
         options.RegisterWorkflow<ContinueAsNewWorkflow>();
+        options.RegisterWorkflow<MaxConcurrentActivityWorkflow>();
         options.RegisterActivity<NotifyActivity>();
+        options.RegisterActivity<DelayActivity>();
     });
 
 // Add services to the container.
@@ -44,6 +46,27 @@ app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient da
 
     var result = await workflowClient.ScheduleNewWorkflowAsync(
         name: nameof(ContinueAsNewWorkflow),
+        instanceId: workflowId,
+        input: orderInfo);
+
+    return new StartWorkflowResponse(){
+        Id = result
+    };   
+}).Produces<StartWorkflowResponse>();
+
+app.MapPost("/startdelay", [Topic("mypubsub", "workflowDelayTopic")] async ( DaprClient daprClient, WorkflowEngineClient workflowClient, StartWorklowRequest? o) => {
+    while (!await daprClient.CheckHealthAsync())
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+        app.Logger.LogInformation("waiting...");
+    }
+
+    string randomData = Guid.NewGuid().ToString();
+    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
+
+    var result = await workflowClient.ScheduleNewWorkflowAsync(
+        name: nameof(MaxConcurrentActivityWorkflow),
         instanceId: workflowId,
         input: orderInfo);
 

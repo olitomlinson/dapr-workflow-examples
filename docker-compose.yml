@@ -18,7 +18,7 @@ services:
     networks:
       - network
   workflow-dapr:
-    image: "daprio/daprd:1.11.0-rc.1"
+    image: "daprio/daprd:1.11.0-rc.3-mariner-linux-arm64"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
@@ -26,7 +26,7 @@ services:
      "-placement-host-address", "placement:50006",
      "-dapr-grpc-port", "4001",
      "-resources-path", "/components",
-     "-log-level","debug"]
+     "-log-level","info"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -47,14 +47,14 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.11.0-rc.1"
+    image: "daprio/daprd:1.11.0-rc.3-mariner-linux-arm64"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
     "-dapr-http-port", "3501",
     "-dapr-grpc-port", "4002",
     "-resources-path", "/components",
-    "-log-level","debug"]
+    "-log-level","info"]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -64,7 +64,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.11.0-rc.1"
+    image: "daprio/dapr:1.11.0-rc.3-mariner-linux-arm64"
     command: ["./placement", "-port", "50006"]
     ports:
       - "50006:50006"
