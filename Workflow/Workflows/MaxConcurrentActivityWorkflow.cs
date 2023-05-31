@@ -11,7 +11,7 @@ namespace WorkflowConsoleApp.Workflows
 
             try 
             {
-                    Enumerable.Range(0,10).ToList().ForEach(async input => { 
+                    Enumerable.Range(0,1).ToList().ForEach(async input => { 
                     await context.CallActivityAsync(
                         nameof(DelayActivity),
                         new Notification($"{input} - Notification Sent : {workflowId}"));
