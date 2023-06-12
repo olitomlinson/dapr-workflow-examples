@@ -18,7 +18,7 @@ services:
     networks:
       - network
   workflow-dapr:
-    image: "daprio/daprd:1.11.0-rc.6-mariner-linux-arm64"
+    image: "daprio/daprd:1.11.0-mariner-linux-arm64"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
@@ -48,7 +48,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.11.0-rc.6-mariner-linux-arm64"
+    image: "daprio/daprd:1.11.0-mariner-linux-arm64"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -65,7 +65,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.11.0-rc.6-mariner-linux-arm64"
+    image: "daprio/dapr:1.11.0-mariner-linux-arm64"
     command: ["./placement", "-port", "50006"]
     ports:
       - "50006:50006"
