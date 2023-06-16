@@ -29,8 +29,8 @@ app.MapPost("/start", async (DaprClient daprClient, int? count, bool? async) =>
 
     var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
 
-    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(input, token) => {
-        var request = new StartWorkflowRequest{ Id = $"{input}-{Guid.NewGuid().ToString()[..8]}" };
+    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
+        var request = new StartWorkflowRequest{ Id = $"{index}-{Guid.NewGuid().ToString()[..8]}" };
         
         if (async.HasValue && async.Value == true)
             await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowTopic", request);
@@ -39,7 +39,7 @@ app.MapPost("/start", async (DaprClient daprClient, int? count, bool? async) =>
         
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
-        results.Add(new StartWorkflowResponse { Index = input, Id = request.Id });
+        results.Add(new StartWorkflowResponse { Index = index, Id = request.Id });
     });
     return results;
 }).Produces<List<StartWorkflowResponse>>();
@@ -55,8 +55,8 @@ app.MapPost("/startdelay", async (DaprClient daprClient, int? count, bool? async
 
     var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
 
-    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(input, token) => {
-        var request = new StartWorkflowRequest{ Id = $"{input}-{Guid.NewGuid().ToString()[..8]}" };
+    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
+        var request = new StartWorkflowRequest{ Id = $"{index}-{Guid.NewGuid().ToString()[..8]}" };
         
         if (async.HasValue && async.Value == true)
             await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowDelayTopic", request);
@@ -65,7 +65,7 @@ app.MapPost("/startdelay", async (DaprClient daprClient, int? count, bool? async
         
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
-        results.Add(new StartWorkflowResponse { Index = input, Id = request.Id });
+        results.Add(new StartWorkflowResponse { Index = index, Id = request.Id });
     });
     return results;
 }).Produces<List<StartWorkflowResponse>>();

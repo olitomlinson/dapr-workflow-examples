@@ -44,10 +44,21 @@ app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient da
     string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
-    var result = await workflowClient.ScheduleNewWorkflowAsync(
-        name: nameof(ContinueAsNewWorkflow),
-        instanceId: workflowId,
-        input: orderInfo);
+    string result = string.Empty;
+    try
+    {
+        result = await workflowClient.ScheduleNewWorkflowAsync(
+            name: nameof(ContinueAsNewWorkflow),
+            instanceId: workflowId,
+            input: orderInfo);
+    }
+    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    {
+        app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
+        return new StartWorkflowResponse(){
+            Id = workflowId + " error"
+        };
+    }
 
     return new StartWorkflowResponse(){
         Id = result
@@ -65,10 +76,21 @@ app.MapPost("/startdelay", [Topic("mypubsub", "workflowDelayTopic")] async ( Dap
     string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
-    var result = await workflowClient.ScheduleNewWorkflowAsync(
-        name: nameof(MaxConcurrentActivityWorkflow),
-        instanceId: workflowId,
-        input: orderInfo);
+    string result = string.Empty;
+    try
+    {
+        result = await workflowClient.ScheduleNewWorkflowAsync(
+            name: nameof(MaxConcurrentActivityWorkflow),
+            instanceId: workflowId,
+            input: orderInfo);
+    }
+    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    {
+        app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
+        return new StartWorkflowResponse(){
+            Id = workflowId + " error"
+        };
+    }
 
     return new StartWorkflowResponse(){
         Id = result
