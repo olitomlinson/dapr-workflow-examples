@@ -45,10 +45,13 @@ app.MapPost("/start", async (DaprClient daprClient, int? count, bool? async) =>
 }).Produces<List<StartWorkflowResponse>>();
 
 
-app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string runId, int? count) =>
+app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string runId, int? count, bool? failOnTimeout) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
+
+    if (!failOnTimeout.HasValue)
+        failOnTimeout = false;
 
     var results = new List<StartWorkflowResponse>();
 
@@ -57,7 +60,9 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
     var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
 
     await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
-        var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
+        var request = new StartWorkflowRequest{ 
+            Id = $"{index}-{runId}",
+            FailOnTimeout = failOnTimeout.Value };
         
         await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "start-raise-event-workflow", request);
 
@@ -124,6 +129,7 @@ app.Run();
 public class StartWorkflowRequest
 {
     public string Id {get; set;}
+    public bool FailOnTimeout { get; set; }
 }
 
 public class StartWorkflowResponse

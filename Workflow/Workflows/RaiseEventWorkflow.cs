@@ -3,9 +3,9 @@ using WorkflowConsoleApp.Activities;
 
 namespace WorkflowConsoleApp.Workflows
 {
-    public class RaiseEventWorkflow : Workflow<WorkflowPayload, string>
+    public class RaiseEventWorkflow : Workflow<RaiseEventWorkflowPayload, string>
     {
-        public override async Task<string> RunAsync(WorkflowContext context, WorkflowPayload payload)
+        public override async Task<string> RunAsync(WorkflowContext context, RaiseEventWorkflowPayload payload)
         {
             var cts = new CancellationTokenSource();
 
@@ -21,7 +21,12 @@ namespace WorkflowConsoleApp.Workflows
                 return $"external event : {externalEvent.Result}";
             }
             else if (winner == timer)
-                return "timed out after 30s";
+            {
+                if (payload.failOnTimeout)
+                    throw new Exception("Workflow Timed out after 30 seconds");
+                else
+                    return "timed out after 30s";
+            }
             
             return "error";
         }
