@@ -107,7 +107,11 @@ app.MapPost("/start-raise-event-workflow-event", async ( DaprClient daprClient, 
 
     app.Logger.LogInformation("raising event... : {InstanceId}, {EventName}, {EventData}", o.InstanceId, o.EventName, o.EventData);
 
-    await workflowClient.RaiseEventAsync(o.InstanceId, o.EventName, o.EventData);
+    // This works as expected
+    await daprClient.RaiseWorkflowEventAsync(o.InstanceId, "dapr", o.EventName, o.EventData);
+
+    // This doesn't, eventPayload arrives in workflow as null 
+    //await workflowClient.RaiseEventAsync(o.InstanceId, o.EventName, o.EventData);
 });
 
 
