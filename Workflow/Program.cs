@@ -34,7 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -66,7 +66,7 @@ app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient da
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("mypubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -157,7 +157,7 @@ app.MapGet("/raise-event-workflow-status", async ( DaprClient daprClient, DaprWo
 }).Produces<string>();
 
 
-app.MapPost("/startdelay", [Topic("mypubsub", "workflowDelayTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/startdelay", [Topic("kafka-pubsub", "workflowDelayTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));

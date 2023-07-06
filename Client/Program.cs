@@ -33,7 +33,7 @@ app.MapPost("/start", async (DaprClient daprClient, int? count, bool? async) =>
         var request = new StartWorkflowRequest{ Id = $"{index}-{Guid.NewGuid().ToString()[..8]}" };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowTopic", request);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request);
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start", request);
         
@@ -64,7 +64,7 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
             Id = $"{index}-{runId}",
             FailOnTimeout = failOnTimeout.Value };
         
-        await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "start-raise-event-workflow", request);
+        await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "start-raise-event-workflow", request);
 
         app.Logger.LogInformation("start-raise-event-workflow Id: {0}", request.Id);
         
@@ -113,7 +113,7 @@ app.MapPost("/startdelay", async (DaprClient daprClient, int? count, bool? async
         var request = new StartWorkflowRequest{ Id = $"{index}-{Guid.NewGuid().ToString()[..8]}" };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("mypubsub", "workflowDelayTopic", request);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowDelayTopic", request);
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "startdelay", request);
         

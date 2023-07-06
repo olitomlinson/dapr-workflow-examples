@@ -27,11 +27,13 @@ services:
      "-placement-host-address", "placement:50006",
      "-dapr-grpc-port", "4001",
      "-resources-path", "/components",
-     "-log-level","info"]
+     "-log-level","debug"]
     volumes:
         - "./components/:/components"
     depends_on:
-      - workflow-app
+      kafka:
+        condition: service_healthy
+
     network_mode: "service:workflow-app"
   ############################
   # Client App + Dapr sidecar
@@ -59,11 +61,12 @@ services:
     "-dapr-http-port", "3501",
     "-dapr-grpc-port", "4002",
     "-resources-path", "/components",
-    "-log-level","info"]
+    "-log-level","debug"]
     volumes:
       - "./components/:/components"
     depends_on:
-      - client-app
+      kafka:
+        condition: service_healthy
     network_mode: "service:client-app"
   ############################
   # Dapr placement service
@@ -89,5 +92,51 @@ services:
     image: "redis:alpine"
     networks:
       - network
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.4
+    networks:
+      - network
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ALLOW_ANONYMOUS_LOGIN: "true"
+    ports:
+      - 2181:2181
+    volumes:
+      - zookeeper_logs:/var/lib/zookeeper/log
+      - zookeeper_data:/var/lib/zookeeper/data
+  kafka:
+    image: confluentinc/cp-kafka:7.0.4
+    networks:
+      - network
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    healthcheck:
+      test: nc -z localhost 9092 || exit -1
+      interval: 10s
+      retries: 10
+      timeout: 30s
+      start_period: 10s
+    ports:
+      - 9092:9092
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG4J_ROOT_LOGLEVEL: ERROR
+      KAFKA_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR
+      KAFKA_JMX_PORT: 9997
 networks:
     network:
+volumes:
+  db-data:
+    driver: local
+  zookeeper_logs:
+    driver: local
+  zookeeper_data:
+    driver: local
