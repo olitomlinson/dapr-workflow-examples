@@ -5,8 +5,7 @@ services:
   ############################
   workflow-app:
     environment:
-      - DAPR_HTTP_PORT=3500
-      - DAPR_GRPC_PORT=4001
+      - DAPR_GRPC_PORT=50001
     build:
       context: .
       dockerfile: Workflow/Dockerfile
@@ -21,9 +20,7 @@ services:
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
-     "-dapr-http-port", "3500",
      "-placement-host-address", "placement:50006",
-     "-dapr-grpc-port", "4001",
      "-resources-path", "/components",
      "-log-level","debug"]
     volumes:
@@ -38,15 +35,11 @@ services:
   # Client App + Dapr sidecar
   ############################
   client-app:
-    environment:
-      - DAPR_HTTP_PORT=3501
-      - DAPR_GRPC_PORT=4002
     build:
       context: .
       dockerfile: Client/Dockerfile
     ports:
       - "5112:5111"
-      - "3501:3501"
     networks:
       - network
   client-dapr:
@@ -54,8 +47,6 @@ services:
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
-    "-dapr-http-port", "3501",
-    "-dapr-grpc-port", "4002",
     "-resources-path", "/components",
     "-log-level","debug"]
     volumes:
