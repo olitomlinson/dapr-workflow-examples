@@ -13,8 +13,6 @@ services:
     ports:
       - "3500:3500" # only important so we can reach the sidecar from the host for testing purposes
     depends_on:
-      - redis-4-state
-      - redis-4-pubsub
       - placement
     networks:
       - network
@@ -33,7 +31,8 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-
+      redis-4-state:
+        condition: service_started
     network_mode: "service:workflow-app"
   ############################
   # Client App + Dapr sidecar
@@ -48,9 +47,6 @@ services:
     ports:
       - "5112:5111"
       - "3501:3501"
-    depends_on:
-      - redis-4-state
-      - redis-4-pubsub
     networks:
       - network
   client-dapr:
@@ -82,13 +78,6 @@ services:
   # Redis state store
   ############################
   redis-4-state:
-    image: "redis:alpine"
-    networks:
-      - network
-  ############################
-  # Redis state store
-  ############################
-  redis-4-pubsub:
     image: "redis:alpine"
     networks:
       - network
