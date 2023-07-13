@@ -89,7 +89,7 @@ app.MapPost("/start-raise-event-workflow-event", async (DaprClient daprClient, s
         var payload = new RaiseEvent<string>(){
             InstanceId = $"{index}-{runId}",
             EventName = "wait-event",
-            EventData = "OK"
+            EventData = Guid.NewGuid().ToString()
         };
         
         await daprClient.InvokeMethodAsync<RaiseEvent<string>>("workflow", "start-raise-event-workflow-event", payload);

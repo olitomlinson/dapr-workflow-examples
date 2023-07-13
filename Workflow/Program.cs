@@ -77,13 +77,15 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new RaiseEventWorkflowPayload(o?.FailOnTimeout ?? false);
 
-    string result = string.Empty;
     try
     {
-        result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(RaiseEventWorkflow),
-            instanceId: workflowId,
-            input: orderInfo);
+        await workflowClient.ScheduleNewWorkflowAsync(nameof(RaiseEventWorkflow), workflowId, orderInfo);
+     
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
     }
     catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
@@ -94,7 +96,7 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     }
 
     return new StartWorkflowResponse(){
-        Id = result
+        Id = workflowId
     };   
 }).Produces<StartWorkflowResponse>();
 
