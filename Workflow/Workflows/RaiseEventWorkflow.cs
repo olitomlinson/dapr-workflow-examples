@@ -12,7 +12,7 @@ namespace WorkflowConsoleApp.Workflows
             Task timer = context.CreateTimer(TimeSpan.FromSeconds(30), cts.Token);
  
             // UNCOMMENT THIS TO MAKE THE TASK.WHENALL WORK SUCCESSFULLY
-            //await context.CreateTimer(TimeSpan.FromSeconds(5));
+            // await context.CreateTimer(TimeSpan.FromSeconds(5));
 
             var ev1 = context.WaitForExternalEventAsync<string>("wait-event");
             var ev2 = context.WaitForExternalEventAsync<string>("wait-event");

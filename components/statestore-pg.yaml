@@ -1,0 +1,29 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore-pg
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+  # Connection string
+  - name: connectionString
+    value: "host=postgres-db user=postgres password=wO2VGDsMKR port=5432 database=postgres"
+  # Timeout for database operations, in seconds (optional)
+  #- name: timeoutInSeconds
+  #  value: 20
+  # Name of the table where to store the state (optional)
+  #- name: tableName
+  #  value: "state"
+  # Name of the table where to store metadata used by Dapr (optional)
+  #- name: metadataTableName
+  #  value: "dapr_metadata"
+  # Cleanup interval in seconds, to remove expired rows (optional)
+  #- name: cleanupIntervalInSeconds
+  #  value: 3600
+  # Max idle time for connections before they're closed (optional)
+  #- name: connectionMaxIdleTime
+  #  value: 0
+  # Uncomment this if you wish to use PostgreSQL as a state store for actors (optional)
+  - name: actorStateStore
+    value: "true"

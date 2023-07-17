@@ -1,5 +1,17 @@
 version: '3.4'
 services:
+  postgres-db:
+    image: postgres:15.2-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=wO2VGDsMKR
+    ports:
+      - '5432:5432'
+    networks:
+      - network
+    volumes: 
+      - postgres-db:/var/lib/postgresql/data
   ############################
   # Workflow App + Dapr sidecar
   ############################
@@ -26,6 +38,8 @@ services:
     volumes:
         - "./components/:/components"
     depends_on:
+      postgres-db:
+        condition: service_started
       kafka:
         condition: service_healthy
       redis-4-state:
@@ -48,7 +62,7 @@ services:
     "-app-id", "client",
     "-app-port", "5111",
     "-resources-path", "/components",
-    "-log-level","debug"]
+    "-log-level","info"]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -119,4 +133,6 @@ volumes:
   zookeeper_logs:
     driver: local
   zookeeper_data:
+    driver: local
+  postgres-db:
     driver: local

@@ -10,7 +10,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
         options.RegisterWorkflow<ContinueAsNewWorkflow>();
-        options.RegisterWorkflow<MaxConcurrentActivityWorkflow>();
+        options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
         options.RegisterActivity<NotifyActivity>();
         options.RegisterActivity<DelayActivity>();
@@ -159,7 +159,7 @@ app.MapGet("/raise-event-workflow-status", async ( DaprClient daprClient, DaprWo
 }).Produces<string>();
 
 
-app.MapPost("/startdelay", [Topic("kafka-pubsub", "workflowDelayTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -174,7 +174,7 @@ app.MapPost("/startdelay", [Topic("kafka-pubsub", "workflowDelayTopic")] async (
     try
     {
         result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(MaxConcurrentActivityWorkflow),
+            name: nameof(FanOutWorkflow),
             instanceId: workflowId,
             input: orderInfo);
     }
