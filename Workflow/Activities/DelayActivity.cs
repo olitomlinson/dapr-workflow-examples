@@ -14,9 +14,11 @@ namespace WorkflowConsoleApp.Activities
 
         public override async Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
         {
+            this.logger.LogInformation("waiting..." + notification.Message);
+            
             await Task.Delay(3000);
 
-            this.logger.LogInformation(notification.Message);
+            this.logger.LogInformation("finished. " + notification.Message);
 
             return Task.FromResult<object>(null);
         }

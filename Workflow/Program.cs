@@ -10,7 +10,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
         options.RegisterWorkflow<ContinueAsNewWorkflow>();
-        options.RegisterWorkflow<MaxConcurrentActivityWorkflow>();
+        options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
         options.RegisterActivity<NotifyActivity>();
         options.RegisterActivity<DelayActivity>();
@@ -34,7 +34,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -66,7 +66,7 @@ app.MapPost("/start", [Topic("mypubsub", "workflowTopic")] async ( DaprClient da
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("mypubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-raise-event-workflow", [Topic("redis-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -77,13 +77,15 @@ app.MapPost("/start-raise-event-workflow", [Topic("mypubsub", "start-raise-event
     string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new RaiseEventWorkflowPayload(o?.FailOnTimeout ?? false);
 
-    string result = string.Empty;
     try
     {
-        result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(RaiseEventWorkflow),
-            instanceId: workflowId,
-            input: orderInfo);
+        await workflowClient.ScheduleNewWorkflowAsync(nameof(RaiseEventWorkflow), workflowId, orderInfo);
+     
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
     }
     catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
@@ -94,7 +96,7 @@ app.MapPost("/start-raise-event-workflow", [Topic("mypubsub", "start-raise-event
     }
 
     return new StartWorkflowResponse(){
-        Id = result
+        Id = workflowId
     };   
 }).Produces<StartWorkflowResponse>();
 
@@ -157,7 +159,7 @@ app.MapGet("/raise-event-workflow-status", async ( DaprClient daprClient, DaprWo
 }).Produces<string>();
 
 
-app.MapPost("/startdelay", [Topic("mypubsub", "workflowDelayTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -172,7 +174,7 @@ app.MapPost("/startdelay", [Topic("mypubsub", "workflowDelayTopic")] async ( Dap
     try
     {
         result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(MaxConcurrentActivityWorkflow),
+            name: nameof(FanOutWorkflow),
             instanceId: workflowId,
             input: orderInfo);
     }
