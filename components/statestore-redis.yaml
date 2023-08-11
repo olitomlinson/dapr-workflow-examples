@@ -10,5 +10,5 @@ spec:
     value: redis-4-state:6379
   - name: redisPassword
     value: ""
-  #- name: actorStateStore
-  #  value: "true"
+  - name: actorStateStore
+    value: "true"

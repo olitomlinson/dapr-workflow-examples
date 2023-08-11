@@ -33,9 +33,9 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "workflowTopic", request, cts.Token);
         else
-            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start", request);
+            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start", request, cts.Token);
         
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
@@ -64,7 +64,7 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
             Id = $"{index}-{runId}",
             FailOnTimeout = failOnTimeout.Value };
         
-        await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "start-raise-event-workflow", request);
+        await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "start-raise-event-workflow", request, cts.Token);
 
         app.Logger.LogInformation("start-raise-event-workflow Id: {0}", request.Id);
         
@@ -92,7 +92,7 @@ app.MapPost("/start-raise-event-workflow-event", async (DaprClient daprClient, s
             EventData = Guid.NewGuid().ToString()
         };
         
-        await daprClient.InvokeMethodAsync<RaiseEvent<string>>("workflow", "start-raise-event-workflow-event", payload);
+        await daprClient.InvokeMethodAsync<RaiseEvent<string>>("workflow", "start-raise-event-workflow-event", payload, cts.Token);
 
         app.Logger.LogInformation("event raised: {0}", payload.InstanceId);
     });
@@ -111,11 +111,11 @@ app.MapPost("/start-fanout-workflow", async (DaprClient daprClient, string runId
 
     await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
-        
+
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "FanoutWorkflowTopic", request);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "FanoutWorkflowTopic", request, cts.Token );
         else
-            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start-fanout-workflow", request);
+            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start-fanout-workflow", request, cts.Token);
         
         app.Logger.LogInformation("start Id: {0}", request.Id);
         

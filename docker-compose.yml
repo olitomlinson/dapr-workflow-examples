@@ -28,13 +28,13 @@ services:
     networks:
       - network
   workflow-dapr:
-    image: "daprio/daprd:1.11.1-mariner-linux-arm64"
+    image: "daprio/daprd:1.11.2-mariner-linux-arm64"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
      "-resources-path", "/components",
-     "-log-level","debug"]
+     "-log-level","info"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -43,6 +43,8 @@ services:
       kafka:
         condition: service_healthy
       redis-4-state:
+        condition: service_started
+      redis-4-pubsub:
         condition: service_started
     network_mode: "service:workflow-app"
   ############################
@@ -57,7 +59,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.11.1-mariner-linux-arm64"
+    image: "daprio/daprd:1.11.2-mariner-linux-arm64"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -68,12 +70,14 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      redis-4-pubsub:
+        condition: service_started
     network_mode: "service:client-app"
   ############################
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.11.1-mariner-linux-arm64"
+    image: "daprio/dapr:1.11.2-mariner-linux-arm64"
     command: ["./placement", "-port", "50006"]
     ports:
       - "50006:50006"
@@ -84,6 +88,15 @@ services:
   ############################
   redis-4-state:
     image: "redis:alpine"
+    networks:
+      - network
+  ############################
+  # Redis pubsub 
+  ############################
+  redis-4-pubsub:
+    image: "redis:alpine"
+    ports:
+      - "1234:6379"
     networks:
       - network
   zookeeper:
