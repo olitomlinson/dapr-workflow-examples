@@ -12,8 +12,12 @@ builder.Services.AddDaprWorkflow(options =>
         options.RegisterWorkflow<ContinueAsNewWorkflow>();
         options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
+        options.RegisterWorkflow<WebhookWorkflow>();
+        options.RegisterWorkflow<BatchMonitorWorkflow>();
         options.RegisterActivity<NotifyActivity>();
         options.RegisterActivity<DelayActivity>();
+        options.RegisterActivity<SubmitWebhookPayloadActivity>();
+        options.RegisterActivity<SubmitWebhookResponseActivity>();
     });
 
 // Add services to the container.
@@ -191,6 +195,38 @@ app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopi
     };   
 }).Produces<StartWorkflowResponse>();
 
+
+app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+    while (!await daprClient.CheckHealthAsync())
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+        app.Logger.LogInformation("waiting...");
+    }
+
+    string randomData = Guid.NewGuid().ToString();
+    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+
+    string result = string.Empty;
+    try
+    {
+        result = await workflowClient.ScheduleNewWorkflowAsync(
+            name: nameof(WebhookWorkflow),
+            instanceId: workflowId,
+            input: $"payload is {Guid.NewGuid().ToString()}");
+    }
+    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    {
+        app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
+        return new StartWorkflowResponse(){
+            Id = workflowId + " error"
+        };
+    }
+
+    return new StartWorkflowResponse(){
+        Id = result
+    };   
+}).Produces<StartWorkflowResponse>();
+
 app.Run();
 
 public record WorkflowPayload(string RandomData, int Count = 0);
@@ -214,3 +250,9 @@ public class RaiseEvent<T>
     public string EventName {get; set;}
     public T EventData { get; set; }
 }
+
+public record WebhookPayload(string InstanceId, string Payload);
+
+public record WebhookResponse(string InstanceId, string Response);
+
+public record BatchMonitorState(string Url, Dictionary<string, string> Payloads);
