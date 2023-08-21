@@ -2,39 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Docker .NET Attach (Preview)",
-            "type": "docker",
-            "request": "attach",
-            "platform": "netCore",
-            "sourceFileMap": {
-                "/src": "${workspaceFolder}"
-            }
-        },
-        {
-            "name": ".NET Core Launch (web) with Kubernetes",
-            "type": "coreclr",
-            "request": "launch",
-            "preLaunchTask": "bridge-to-kubernetes.compound",
-            "program": "${workspaceFolder}/WorkflowApi/bin/Debug/net6.0/WorkflowApi.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}/WorkflowApi",
-            "stopAtEntry": false,
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development",
-                "ASPNETCORE_URLS": "http://+:5111"
-            },
-            "sourceFileMap": {
-                "/Views": "${workspaceFolder}/Views"
-            }
-        },
-        {
-            "name": ".NET Core Launch (web)",
+            "name": "Debug workflow app",
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/WorkflowApi/bin/Debug/net6.0/WorkflowApi.dll",
+            "program": "${workspaceFolder}/Workflow/bin/Debug/net6.0/Workflow.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/WorkflowApi",
+            "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
             "serverReadyAction": {
                 "action": "openExternally",
@@ -42,10 +16,21 @@
             },
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development",
-                "ASPNETCORE_URLS": "http://localhost:5111"
+                "ASPNETCORE_URLS": "http://localhost:5111",
+                "DAPR-HTTP-PORT": "3500",
+                "DAPR-GRPC-PORT": "4001"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
+            }
+        },
+        {
+            "name": "Docker .NET Attach (Preview)",
+            "type": "docker",
+            "request": "attach",
+            "platform": "netCore",
+            "sourceFileMap": {
+                "/src": "${workspaceFolder}"
             }
         },
         {
@@ -59,7 +44,7 @@
             "request": "launch",
             "preLaunchTask": "docker-run: debug",
             "netCore": {
-                "appProject": "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
+                "appProject": "${workspaceFolder}/Workflow/Workflow.csproj"
             }
         }
     ]

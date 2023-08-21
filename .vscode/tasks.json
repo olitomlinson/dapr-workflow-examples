@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj",
+                "${workspaceFolder}/Workflow/Workflow.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj",
+                "${workspaceFolder}/Workflow/Workflow.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
+                "${workspaceFolder}/Workflow/Workflow.csproj"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -66,12 +66,12 @@
             "dockerBuild": {
                 "tag": "daprworkflowexamples:dev",
                 "target": "base",
-                "dockerfile": "${workspaceFolder}/WorkflowApi/Dockerfile",
+                "dockerfile": "${workspaceFolder}/Workflow/Dockerfile",
                 "context": "${workspaceFolder}",
                 "pull": true
             },
             "netCore": {
-                "appProject": "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
+                "appProject": "${workspaceFolder}/Workflow/Workflow.csproj"
             }
         },
         {
@@ -82,12 +82,12 @@
             ],
             "dockerBuild": {
                 "tag": "daprworkflowexamples:latest",
-                "dockerfile": "${workspaceFolder}/WorkflowApi/Dockerfile",
+                "dockerfile": "${workspaceFolder}/Workflow/Dockerfile",
                 "context": "${workspaceFolder}",
                 "pull": true
             },
             "netCore": {
-                "appProject": "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
+                "appProject": "${workspaceFolder}/Workflow/Workflow.csproj"
             }
         },
         {
@@ -98,7 +98,7 @@
             ],
             "dockerRun": {},
             "netCore": {
-                "appProject": "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj",
+                "appProject": "${workspaceFolder}/Workflow/Workflow.csproj",
                 "enableDebugging": true
             }
         },
@@ -110,7 +110,7 @@
             ],
             "dockerRun": {},
             "netCore": {
-                "appProject": "${workspaceFolder}/WorkflowApi/WorkflowApi.csproj"
+                "appProject": "${workspaceFolder}/Workflow/Workflow.csproj"
             }
         }
     ]

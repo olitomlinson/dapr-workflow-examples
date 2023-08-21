@@ -3,6 +3,7 @@ using Dapr;
 using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.MapGet("health", () => "Hello World!");
 
 app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
@@ -121,7 +124,7 @@ app.MapPost("/start-raise-event-workflow-event", async ( DaprClient daprClient, 
 });
 
 
-app.MapGet("/raise-event-workflow-status", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, string runId, int? count) => {
+app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, string runId, int? count) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));

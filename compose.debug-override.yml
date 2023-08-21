@@ -1,0 +1,19 @@
+version: '3.4'
+services:
+  workflow-app:
+    environment:
+      - DAPR_GRPC_PORT=9990 # move the dapr ports out of the way so they don't interfere with anything
+      - DAPR_HTTP_PORT=9991 # move the dapr ports out of the way so they don't interfere with anything
+    ports:
+      - "3500:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
+      - "4001:4001" # only important so we can run the 'workflow app' locally outside of compose if we want to
+  workflow-dapr:
+    command: ["./daprd",
+     "-app-id", "workflow",
+     "-app-channel-address", "host.docker.internal",
+     "-app-port", "5111",
+     "-dapr-http-port", "3500",
+     "-dapr-grpc-port", "4001",
+     "-placement-host-address", "placement:50006",
+     "-resources-path", "/components",
+     "-log-level","info"]
