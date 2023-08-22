@@ -1,0 +1,30 @@
+version: '3.4'
+services:
+  workflow-dapr-debug:
+    image: "daprio/daprd:nightly-2023-08-12-mariner-linux-arm64"
+    command: ["./daprd",
+     "-app-id", "workflow",
+     "-app-channel-address", "host.docker.internal",
+     "-app-port", "5111",
+     "-dapr-http-port", "3500",
+     "-placement-host-address", "placement:50006",
+     "-resources-path", "/components",
+     "-log-level","info"]
+    volumes:
+        - "./components/:/components"
+    ports:
+      - "3500:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
+      - "50001:50001" # only important so we can run the 'workflow app' locally outside of compose if we want to
+    depends_on:
+      postgres-db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+      redis-4-state:
+        condition: service_started
+      redis-4-pubsub:
+        condition: service_started
+    networks:
+      - network
+    profiles:
+      - debug-workflow-app

@@ -17,7 +17,7 @@ services:
   ############################
   workflow-app:
     environment:
-      - DAPR_GRPC_PORT=50001 # we have to force the port otherwise it doesn't get picked up due to a bug in the durabletask-go library
+      - DAPR_GRPC_PORT=50001 # we have to force the port on the SDK due to bug https://github.com/dapr/dotnet-sdk/issues/1125
     build:
       context: .
       dockerfile: Workflow/Dockerfile
@@ -27,6 +27,8 @@ services:
       - placement
     networks:
       - network
+    profiles:
+      - run
   workflow-dapr:
     image: "daprio/daprd:nightly-2023-08-12-mariner-linux-arm64"
     command: ["./daprd",
@@ -47,6 +49,8 @@ services:
       redis-4-pubsub:
         condition: service_started
     network_mode: "service:workflow-app"
+    profiles:
+      - run
   ############################
   # Client App + Dapr sidecar
   ############################
@@ -141,7 +145,7 @@ services:
       KAFKA_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR
       KAFKA_JMX_PORT: 9997
 networks:
-    network:
+  network:
 volumes:
   db-data:
     driver: local
