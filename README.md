@@ -7,7 +7,7 @@ This is now a repo for helping reproduce and debug various Dapr Workflow issues.
 1. `docker compose build`
 2. `docker compose --profile=run up`
 
-### Run compose, but with a local debug for the Workflow app
+### Run compose, but with a local debugger for the Workflow app
 
 1. `docker compose build`
 2. `docker compose -f compose.yml -f compose.debug-workflow-app.yml --profile=debug-workflow-app up`
