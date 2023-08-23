@@ -1,8 +1,7 @@
 version: '3.4'
 services:
   workflow-app: #isolate the workflow-app by removing its ports and taking it off the network
-    ports: !reset 
-      - "9999:9999"
+    ports: !reset []
     networks: !reset
       - ""
   workflow-dapr:
