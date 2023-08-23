@@ -16,7 +16,7 @@ This is now a repo for helping reproduce and debug various Dapr Workflow issues.
 1. `docker compose build`
 2. `docker compose -f compose.yml -f compose.debug-workflow-app.yml up`
 3. in VS Code, Run the launch task `Debug workflow app` to debug the Workflow app
-4. 
+   
 ![image](https://github.com/olitomlinson/dapr-workflow-examples/assets/4224880/2cced844-6c42-4f5a-af62-d174a0309bda)
 
 
