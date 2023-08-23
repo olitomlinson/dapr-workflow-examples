@@ -5,7 +5,6 @@ services:
     networks: !reset
       - ""
   workflow-dapr:
-    image: "daprio/daprd:nightly-2023-08-12-mariner-linux-arm64"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
@@ -13,7 +12,7 @@ services:
      "-resources-path", "/components",
      "-app-channel-address", "host.docker.internal"] # make the sidecar look on the host for the App Channel
     network_mode: !reset "" # reset the network_mode...
-    networks: # ... so that we can put the sidecar onto the normal network
+    networks: # ... so that the sidecar can go into the normal network
       - network
     ports:
       - "3500:3500" # Expose the HTTP port to the host
