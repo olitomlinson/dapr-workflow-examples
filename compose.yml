@@ -27,16 +27,13 @@ services:
       - placement
     networks:
       - network
-    profiles:
-      - run
   workflow-dapr:
     image: "daprio/daprd:nightly-2023-08-12-mariner-linux-arm64"
     command: ["./daprd",
      "-app-id", "workflow",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
-     "-resources-path", "/components",
-     "-log-level","info"]
+     "-resources-path", "/components"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -49,8 +46,6 @@ services:
       redis-4-pubsub:
         condition: service_started
     network_mode: "service:workflow-app"
-    profiles:
-      - run
   ############################
   # Client App + Dapr sidecar
   ############################
@@ -83,8 +78,6 @@ services:
   placement:
     image: "daprio/dapr:nightly-2023-08-12-mariner-linux-arm64"
     command: ["./placement", "-port", "50006"]
-    ports:
-      - "50006:50006"
     networks:
       - network
   ############################
