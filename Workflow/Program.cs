@@ -14,11 +14,14 @@ builder.Services.AddDaprWorkflow(options =>
         options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
         options.RegisterWorkflow<WebhookWorkflow>();
+        options.RegisterWorkflow<SagaWorkflow>();
         options.RegisterWorkflow<BatchMonitorWorkflow>();
         options.RegisterActivity<NotifyActivity>();
+        options.RegisterActivity<NotifyCompensateActivity>();
         options.RegisterActivity<DelayActivity>();
         options.RegisterActivity<SubmitWebhookPayloadActivity>();
         options.RegisterActivity<SubmitWebhookResponseActivity>();
+        options.RegisterActivity<AlwaysFailActivity>();
     });
 
 // Add services to the container.
@@ -216,6 +219,38 @@ app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTo
             name: nameof(WebhookWorkflow),
             instanceId: workflowId,
             input: $"payload is {Guid.NewGuid().ToString()}");
+    }
+    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    {
+        app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
+        return new StartWorkflowResponse(){
+            Id = workflowId + " error"
+        };
+    }
+
+    return new StartWorkflowResponse(){
+        Id = result
+    };   
+}).Produces<StartWorkflowResponse>();
+
+app.MapPost("/saga", [Topic("redis-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+    while (!await daprClient.CheckHealthAsync())
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+        app.Logger.LogInformation("waiting...");
+    }
+
+    string randomData = Guid.NewGuid().ToString();
+    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
+
+    string result = string.Empty;
+    try
+    {
+        result = await workflowClient.ScheduleNewWorkflowAsync(
+            name: nameof(SagaWorkflow),
+            instanceId: workflowId,
+            input: orderInfo);
     }
     catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
