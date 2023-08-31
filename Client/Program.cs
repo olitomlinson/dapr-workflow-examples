@@ -33,7 +33,7 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "workflowTopic", request, cts.Token);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request, cts.Token);
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start", request, cts.Token);
         
@@ -64,7 +64,7 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
             Id = $"{index}-{runId}",
             FailOnTimeout = failOnTimeout.Value };
         
-        await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "start-raise-event-workflow", request, cts.Token);
+        await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "start-raise-event-workflow", request, cts.Token);
 
         app.Logger.LogInformation("start-raise-event-workflow Id: {0}", request.Id);
         
@@ -113,7 +113,7 @@ app.MapPost("/start-fanout-workflow", async (DaprClient daprClient, string runId
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
 
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "FanoutWorkflowTopic", request, cts.Token );
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "FanoutWorkflowTopic", request, cts.Token );
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start-fanout-workflow", request, cts.Token);
         
@@ -140,7 +140,7 @@ app.MapPost("/start-webhook-workflow", async (DaprClient daprClient, string runI
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
 
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "WebhookWorkflowTopic", request, cts.Token );
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "WebhookWorkflowTopic", request, cts.Token );
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "start-webhook-workflow", request, cts.Token);
         
@@ -166,7 +166,7 @@ app.MapPost("/saga", async (DaprClient daprClient, string runId, int? count, boo
         var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("redis-pubsub", "sagaTopic", request, cts.Token);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "sagaTopic", request, cts.Token);
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow", "saga", request, cts.Token);
         

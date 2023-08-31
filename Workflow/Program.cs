@@ -44,7 +44,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("health", () => "Hello World!");
 
-app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -76,7 +76,7 @@ app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClien
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("redis-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -169,7 +169,7 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -202,7 +202,7 @@ app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopi
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -233,7 +233,7 @@ app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTo
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/saga", [Topic("redis-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
