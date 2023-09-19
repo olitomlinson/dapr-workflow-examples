@@ -25,5 +25,5 @@ spec:
   #- name: connectionMaxIdleTime
   #  value: 0
   # Uncomment this if you wish to use PostgreSQL as a state store for actors (optional)
-  #- name: actorStateStore
-  #  value: "true"
+  - name: actorStateStore
+    value: "true"
