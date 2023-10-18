@@ -8,10 +8,10 @@ spec:
   metadata:
   - name: brokers # Required. Kafka broker connection setting
     value: "kafka:29092"
-  - name: consumerID # Optional. If not supplied, runtime will create one.
-    value: "channel1"
-  - name: clientID # Optional. Used as client tracing ID by Kafka brokers.
-    value: "workflow"
+  - name: consumerGroup
+    value: "{namespace}"
+  - name: clientID 
+    value: "workflow-client"
   - name: authType # Required.
     value: "none"
   - name: maxMessageBytes # Optional.

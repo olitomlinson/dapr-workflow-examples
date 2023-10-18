@@ -4,6 +4,7 @@ using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using Microsoft.AspNetCore.Mvc;
+using workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,7 +33,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCloudEvents();
+//app.UseCloudEvents();
 app.MapSubscribeHandler();
 
 // Configure the HTTP request pipeline.
@@ -44,15 +45,17 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("health", () => "Hello World!");
 
-app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
+    app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {3}", ce.Id, ce.Type, ce.Source, ce.Specversion);
+
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
     string result = string.Empty;
@@ -76,7 +79,7 @@ app.MapPost("/start", [Topic("redis-pubsub", "workflowTopic")] async ( DaprClien
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("redis-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -169,7 +172,7 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -202,7 +205,7 @@ app.MapPost("/start-fanout-workflow", [Topic("redis-pubsub", "FanoutWorkflowTopi
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -233,7 +236,7 @@ app.MapPost("/start-webhook-workflow", [Topic("redis-pubsub", "WebhookWorkflowTo
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/saga", [Topic("redis-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
