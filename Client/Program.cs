@@ -23,10 +23,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async) =>
+app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
+
+    if (!sleep.HasValue)
+        sleep = 0;
 
     var results = new List<StartWorkflowResponse>();
 
@@ -35,12 +38,17 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
     var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
 
     await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
-        var request = new StartWorkflowRequest{ Id = $"{index}-{runId}" };
+        var request = new StartWorkflowRequest 
+        { 
+            Id = $"{index}-{runId}",
+            Sleep = sleep.Value
+        };
         
-        var metadata = new Dictionary<string, string>();
-        metadata.Add("cloudevent.id", "123");
-        metadata.Add("cloudevent.type", "456");
-        metadata.Add("cloudevent.source", "567");
+        var metadata = new Dictionary<string, string>
+        {
+            { "cloudevent.id", request.Id },
+            { "cloudevent.type", "Continue As New" }
+        };
         
         // var ce = new CloudEvent2<StartWorkflowRequest>(request) { 
         //     Id = "wf-" + Guid.NewGuid().ToString(),
@@ -237,6 +245,7 @@ public class StartWorkflowRequest
 {
     public string Id {get; set;}
     public bool FailOnTimeout { get; set; }
+    public int Sleep { get; set; }
 }
 
 public class StartWorkflowResponse

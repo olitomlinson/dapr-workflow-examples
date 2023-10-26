@@ -54,6 +54,13 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
 
     app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {3}", ce.Id, ce.Type, ce.Source, ce.Specversion);
 
+    if (ce.Data.Sleep > 0)
+    {
+        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
+        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
+        app.Logger.LogInformation("Awake!");
+    }
+
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
@@ -278,6 +285,7 @@ public class StartWorklowRequest
 {
     public string Id { get; set; }
     public bool FailOnTimeout { get; set; }
+    public int Sleep {get;set;}
 }
 
 public class StartWorkflowResponse
