@@ -23,7 +23,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep) =>
+app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
@@ -41,7 +41,8 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         var request = new StartWorkflowRequest 
         { 
             Id = $"{index}-{runId}",
-            Sleep = sleep.Value
+            Sleep = sleep.Value,
+            AbortHint = abortHint
         };
         
         var metadata = new Dictionary<string, string>
@@ -246,6 +247,7 @@ public class StartWorkflowRequest
     public string Id {get; set;}
     public bool FailOnTimeout { get; set; }
     public int Sleep { get; set; }
+    public string AbortHint { get; set; }
 }
 
 public class StartWorkflowResponse

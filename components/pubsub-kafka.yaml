@@ -14,9 +14,5 @@ spec:
     value: "workflow-client"
   - name: authType # Required.
     value: "none"
-  - name: maxMessageBytes # Optional.
-    value: 1024
-  - name: consumeRetryInterval # Optional.
-    value: 200ms
-  - name: disableTls # Optional. Disable TLS. This is not safe for production!! You should read the `Mutual TLS` section for how to use TLS.
+  - name: consumeRetryEnabled
     value: "true"

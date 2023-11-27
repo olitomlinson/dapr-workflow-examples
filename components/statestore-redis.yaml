@@ -10,5 +10,9 @@ spec:
     value: redis-4-state:6379
   - name: redisPassword
     value: ""
+  - name: outboxPublishPubsub # Required
+    value: "redis-pubsub"
+  - name: outboxPublishTopic # Required
+    value: "outbox"
   # - name: actorStateStore
   #   value: "true"

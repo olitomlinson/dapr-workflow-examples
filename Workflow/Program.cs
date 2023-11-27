@@ -45,20 +45,33 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("health", () => "Hello World!");
 
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
+
     app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {3}", ce.Id, ce.Type, ce.Source, ce.Specversion);
+
+    if (ce.Data.Sleep == 666)
+    {
+        throw new Exception("666");
+    }
 
     if (ce.Data.Sleep > 0)
     {
         app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
         await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
         app.Logger.LogInformation("Awake!");
+    }
+
+    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
+    {
+        return new StartWorkflowResponse(){
+            status = ce.Data.AbortHint
+        };
     }
 
     string randomData = Guid.NewGuid().ToString();
@@ -286,11 +299,16 @@ public class StartWorklowRequest
     public string Id { get; set; }
     public bool FailOnTimeout { get; set; }
     public int Sleep {get;set;}
+
+    public string AbortHint { get; set; }
 }
 
 public class StartWorkflowResponse
 {
     public string Id {get; set;}
+
+    public string status { get; set; }
+
 }
 
 public class RaiseEvent<T>
