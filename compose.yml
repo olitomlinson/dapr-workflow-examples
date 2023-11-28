@@ -32,8 +32,7 @@ services:
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
-     "-resources-path", "/components",
-     "-config", "/components/config.yaml"]
+     "-resources-path", "/components"]
     volumes:
         - "./components/:/components"
     depends_on:

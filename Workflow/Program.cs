@@ -99,7 +99,7 @@ app.MapPost("/start", async ( DaprClient daprClient, DaprWorkflowClient workflow
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -107,8 +107,8 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     }
 
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new RaiseEventWorkflowPayload(o?.FailOnTimeout ?? false);
+    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    var orderInfo = new RaiseEventWorkflowPayload(ce.Data?.FailOnTimeout ?? false);
 
     try
     {
