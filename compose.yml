@@ -27,12 +27,13 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.12.2"
+    image: "daprio/daprd:1.13.0-rc.2"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
-     "-resources-path", "/components"]
+     "-resources-path", "/components",
+     "-log-level","warn"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -45,9 +46,9 @@ services:
       redis-4-pubsub:
         condition: service_started
     network_mode: "service:workflow-app-a"
-  # ############################
-  # # Workflow App + Dapr sidecar
-  # ############################
+  ############################
+  # Workflow App + Dapr sidecar
+  ############################
   # workflow-app-b:
   #   environment:
   #     - DAPR_GRPC_PORT=50002
@@ -61,7 +62,7 @@ services:
   #   networks:
   #     - network
   # workflow-dapr-b:
-  #   image: "daprio/daprd:1.12.2"
+  #   image: "daprio/daprd:1.13.0-rc.2"
   #   command: ["./daprd",
   #    "-app-id", "workflow-a",
   #    "-app-port", "5111",
@@ -80,9 +81,9 @@ services:
   #     redis-4-pubsub:
   #       condition: service_started
   #   network_mode: "service:workflow-app-b"
-  ############################
-  # Client App + Dapr sidecar
-  ############################
+  ###########################
+  #Client App + Dapr sidecar
+  ###########################
   client-app:
     build:
       context: .
@@ -93,13 +94,13 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.12.2"
+    image: "daprio/daprd:1.13.0-rc.2"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
     "-dapr-http-port", "3500",
     "-resources-path", "/components",
-    "-log-level","debug"]
+    "-log-level","warn"]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -112,7 +113,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.12.2"
+    image: "daprio/dapr:1.13.0-rc.2"
     command: ["./placement", "-port", "50006"]
     networks:
       - network
@@ -132,19 +133,6 @@ services:
     image: "redis:alpine"
     ports:
       - "1234:6379"
-    networks:
-      - network
-  ############################
-  # Azure SQL 
-  ############################
-  mssql:
-    image: mcr.microsoft.com/azure-sql-edge:latest
-    hostname: "mssql"
-    ports: 
-      - "1433:1433"
-    environment:
-      ACCEPT_EULA: 1
-      MSSQL_SA_PASSWORD: "BananaHelp123@"
     networks:
       - network
   ############################

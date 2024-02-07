@@ -5,6 +5,9 @@ using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using Microsoft.AspNetCore.Mvc;
 using workflow;
+using System.Diagnostics;
+using System.Collections.Concurrent;
+using System.Windows.Markup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +15,7 @@ builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
         options.RegisterWorkflow<ContinueAsNewWorkflow>();
+        options.RegisterWorkflow<ContinueAsNewWorkflow2>();
         options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
         options.RegisterWorkflow<WebhookWorkflow>();
@@ -43,15 +47,40 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+TimingMetadata timings = new TimingMetadata();
+
 app.MapGet("health", () => "Hello World!");
 
-app.MapPost("/start", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+// app.MapGet("timings", () => {
+    
+    // var groups = timings.Splits.Durations.GroupBy(x =>
+    // {
+    //     var stamp = x.Timestamp;
+    //     stamp = stamp.AddMinutes(-(stamp.Minute % 5));
+    //     stamp = stamp.AddMilliseconds(-stamp.Millisecond - 1000 * stamp.Second);
+    //     return stamp;
+    // })
+    // .Select(g => new { TimeStamp = g.Key, Value = g.Average(s => s.Duration) })
+    // .ToList();
+
+    // timings.SplitsGrouped = new List<TimingItem>();
+    // foreach(var a in groups){
+    //     timings.SplitsGrouped.Add(new TimingItem() {
+    //         Timestamp = a.TimeStamp,
+    //         Duration = a.Value
+    //     })
+        
+    // }
+    
+       
+// }).Produces<TimingMetadata>();
+
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
-
 
     app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {3}", ce.Id, ce.Type, ce.Source, ce.Specversion);
 
@@ -79,6 +108,8 @@ app.MapPost("/start", async ( DaprClient daprClient, DaprWorkflowClient workflow
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
     string result = string.Empty;
+    Stopwatch stopwatch = new Stopwatch();
+    stopwatch.Start();
     try
     {
         result = await workflowClient.ScheduleNewWorkflowAsync(
@@ -93,6 +124,9 @@ app.MapPost("/start", async ( DaprClient daprClient, DaprWorkflowClient workflow
             Id = workflowId + " error"
         };
     }
+    stopwatch.Stop();
+    //app.Logger.LogInformation($"duration : {stopwatch.ElapsedMilliseconds}");
+    timings.Splits.Durations.Add(new TimingItem() { Timestamp = DateTime.UtcNow, Duration = (int)stopwatch.ElapsedMilliseconds});
 
     return new StartWorkflowResponse(){
         Id = result
@@ -104,6 +138,25 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
+    }
+
+    if (ce.Data.Sleep == 666)
+    {
+        throw new Exception("666");
+    }
+
+    if (ce.Data.Sleep > 0)
+    {
+        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
+        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
+        app.Logger.LogInformation("Awake!");
+    }
+
+    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
+    {
+        return new StartWorkflowResponse(){
+            status = ce.Data.AbortHint
+        };
     }
 
     string randomData = Guid.NewGuid().ToString();
@@ -192,15 +245,34 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
+    if (ce.Data.Sleep == 666)
+    {
+        throw new Exception("666");
+    }
+
+    if (ce.Data.Sleep > 0)
+    {
+        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
+        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
+        app.Logger.LogInformation("Awake!");
+    }
+
+    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
+    {
+        return new StartWorkflowResponse(){
+            status = ce.Data.AbortHint
+        };
+    }
+
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
     string result = string.Empty;
@@ -225,15 +297,34 @@ app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopi
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
+    if (ce.Data.Sleep == 666)
+    {
+        throw new Exception("666");
+    }
+
+    if (ce.Data.Sleep > 0)
+    {
+        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
+        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
+        app.Logger.LogInformation("Awake!");
+    }
+
+    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
+    {
+        return new StartWorkflowResponse(){
+            status = ce.Data.AbortHint
+        };
+    }
+
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
 
     string result = string.Empty;
     try
@@ -256,15 +347,34 @@ app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTo
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, StartWorklowRequest? o) => {
+app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
+    if (ce.Data.Sleep == 666)
+    {
+        throw new Exception("666");
+    }
+
+    if (ce.Data.Sleep > 0)
+    {
+        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
+        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
+        app.Logger.LogInformation("Awake!");
+    }
+
+    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
+    {
+        return new StartWorkflowResponse(){
+            status = ce.Data.AbortHint
+        };
+    }
+
     string randomData = Guid.NewGuid().ToString();
-    string workflowId = o?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
 
     string result = string.Empty;
@@ -285,7 +395,7 @@ app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient dap
 
     return new StartWorkflowResponse(){
         Id = result
-    };   
+    };    
 }).Produces<StartWorkflowResponse>();
 
 app.Run();

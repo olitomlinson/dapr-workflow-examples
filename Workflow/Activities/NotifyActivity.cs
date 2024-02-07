@@ -16,7 +16,7 @@ namespace WorkflowConsoleApp.Activities
 
         public override Task<object> RunAsync(WorkflowActivityContext context, Notification notification)
         {
-            this.logger.LogInformation(notification.Message);
+            //this.logger.LogInformation(notification.Message);
 
             return Task.FromResult<object>(null);
         }

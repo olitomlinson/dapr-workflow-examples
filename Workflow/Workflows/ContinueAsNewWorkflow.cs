@@ -11,10 +11,10 @@ namespace WorkflowConsoleApp.Workflows
 
             await context.CallActivityAsync(
                 nameof(NotifyActivity),
-                new Notification($"{payload.Count} - Notificaiton Sent : {workflowId} for  {payload.RandomData} at ${payload.Count}"));
+                new Notification($"{payload.Count} - Notificaiton Sent : {workflowId} for  {payload.RandomData} at {payload.Count}"));
 
             if (payload.Count > 10)
-                return true;
+                 return true;
 
             await context.CreateTimer(TimeSpan.FromSeconds(3));
 
@@ -25,6 +25,15 @@ namespace WorkflowConsoleApp.Workflows
 
             context.ContinueAsNew(newWorkflowPayload);
             return false;
+        }
+    }
+
+    public class ContinueAsNewWorkflow2 : Workflow<WorkflowPayload, bool>
+    {
+        public override async Task<bool> RunAsync(WorkflowContext context, WorkflowPayload payload)
+        {
+            await context.CreateTimer(TimeSpan.FromSeconds(30));
+            return true;
         }
     }
 }
