@@ -51,8 +51,8 @@ TimingMetadata timings = new TimingMetadata();
 
 app.MapGet("health", () => "Hello World!");
 
-// app.MapGet("timings", () => {
-    
+app.MapGet("timings", () => {
+    return timings;
     // var groups = timings.Splits.Durations.GroupBy(x =>
     // {
     //     var stamp = x.Timestamp;
@@ -70,10 +70,8 @@ app.MapGet("health", () => "Hello World!");
     //         Duration = a.Value
     //     })
         
-    // }
-    
-       
-// }).Produces<TimingMetadata>();
+    // }      
+}).Produces<TimingMetadata>();
 
 app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
