@@ -41,10 +41,6 @@ services:
         condition: service_started
       kafka:
         condition: service_healthy
-      redis-4-state:
-        condition: service_started
-      redis-4-pubsub:
-        condition: service_started
     network_mode: "service:workflow-app-a"
   ############################
   # Workflow App + Dapr sidecar
@@ -76,10 +72,6 @@ services:
   #       condition: service_started
   #     kafka:
   #       condition: service_healthy
-  #     redis-4-state:
-  #       condition: service_started
-  #     redis-4-pubsub:
-  #       condition: service_started
   #   network_mode: "service:workflow-app-b"
   ###########################
   #Client App + Dapr sidecar
@@ -106,33 +98,15 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
-      redis-4-pubsub:
-        condition: service_started
     network_mode: "service:client-app"
   ############################
   # Dapr placement service
   ############################
   placement:
     image: "daprio/dapr:1.13.0-rc.4"
-    command: ["./placement", "-port", "50006"]
-    networks:
-      - network
-  ############################
-  # Redis state store
-  ############################
-  redis-4-state:
-    image: "redis:alpine"
-    ports:
-      - "1235:6379"
-    networks:
-      - network
-  ############################
-  # Redis pubsub 
-  ############################
-  redis-4-pubsub:
-    image: "redis:alpine"
-    ports:
-      - "1234:6379"
+    command: ["./placement", 
+    "-port", "50006",
+    "-log-level","warn"]
     networks:
       - network
   ############################
