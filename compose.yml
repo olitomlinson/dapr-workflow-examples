@@ -27,7 +27,7 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.13.0-rc.2"
+    image: "daprio/daprd:1.13.0-rc.4"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
@@ -62,7 +62,7 @@ services:
   #   networks:
   #     - network
   # workflow-dapr-b:
-  #   image: "daprio/daprd:1.13.0-rc.2"
+  #   image: "daprio/daprd:1.13.0-rc.4"
   #   command: ["./daprd",
   #    "-app-id", "workflow-a",
   #    "-app-port", "5111",
@@ -94,7 +94,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.13.0-rc.2"
+    image: "daprio/daprd:1.13.0-rc.4"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -113,7 +113,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.13.0-rc.2"
+    image: "daprio/dapr:1.13.0-rc.4"
     command: ["./placement", "-port", "50006"]
     networks:
       - network
@@ -197,6 +197,8 @@ services:
       KAFKA_CLUSTERS_0_METRICS_PORT: 9997
       KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: 'true'
       KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: 'true'
+      LOGGING_LEVEL_ROOT: 'error'
+      LOGGING_LEVEL_COM_PROVECTUS: 'error'
     networks:
       - network
 networks:
