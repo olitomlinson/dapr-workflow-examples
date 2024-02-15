@@ -18,14 +18,11 @@ builder.Services.AddDaprWorkflow(options =>
         options.RegisterWorkflow<ContinueAsNewWorkflow2>();
         options.RegisterWorkflow<FanOutWorkflow>();
         options.RegisterWorkflow<RaiseEventWorkflow>();
-        options.RegisterWorkflow<WebhookWorkflow>();
         options.RegisterWorkflow<SagaWorkflow>();
-        options.RegisterWorkflow<BatchMonitorWorkflow>();
+
         options.RegisterActivity<NotifyActivity>();
         options.RegisterActivity<NotifyCompensateActivity>();
         options.RegisterActivity<DelayActivity>();
-        options.RegisterActivity<SubmitWebhookPayloadActivity>();
-        options.RegisterActivity<SubmitWebhookResponseActivity>();
         options.RegisterActivity<AlwaysFailActivity>();
     });
 
@@ -295,56 +292,6 @@ app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopi
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/start-webhook-workflow", [Topic("kafka-pubsub", "WebhookWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
-    while (!await daprClient.CheckHealthAsync())
-    {
-        Thread.Sleep(TimeSpan.FromSeconds(5));
-        app.Logger.LogInformation("waiting...");
-    }
-
-    if (ce.Data.Sleep == 666)
-    {
-        throw new Exception("666");
-    }
-
-    if (ce.Data.Sleep > 0)
-    {
-        app.Logger.LogInformation("sleeping for {0} ...", ce.Data.Sleep);
-        await Task.Delay(TimeSpan.FromSeconds(ce.Data.Sleep));
-        app.Logger.LogInformation("Awake!");
-    }
-
-    if (!string.IsNullOrEmpty(ce.Data.AbortHint))
-    {
-        return new StartWorkflowResponse(){
-            status = ce.Data.AbortHint
-        };
-    }
-
-    string randomData = Guid.NewGuid().ToString();
-    string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-
-    string result = string.Empty;
-    try
-    {
-        result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(WebhookWorkflow),
-            instanceId: workflowId,
-            input: $"payload is {Guid.NewGuid().ToString()}");
-    }
-    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
-    {
-        app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
-        return new StartWorkflowResponse(){
-            Id = workflowId + " error"
-        };
-    }
-
-    return new StartWorkflowResponse(){
-        Id = result
-    };   
-}).Produces<StartWorkflowResponse>();
-
 app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
@@ -425,9 +372,3 @@ public class RaiseEvent<T>
     public string EventName {get; set;}
     public T EventData { get; set; }
 }
-
-public record WebhookPayload(string InstanceId, string Payload);
-
-public record WebhookResponse(string InstanceId, string Response);
-
-public record BatchMonitorState(string Url, Dictionary<string, string> Payloads);
