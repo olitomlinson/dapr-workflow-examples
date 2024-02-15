@@ -21,4 +21,21 @@ namespace WorkflowConsoleApp.Activities
             return Task.FromResult<object>(null);
         }
     }
+
+    public class HelloActivity : WorkflowActivity<string, string>
+    {
+        readonly ILogger logger;
+
+        public HelloActivity(ILoggerFactory loggerFactory)
+        {
+            this.logger = loggerFactory.CreateLogger<NotifyActivity>();
+        }
+
+        public override Task<string> RunAsync(WorkflowActivityContext context, string input)
+        {
+            this.logger.LogInformation(input);
+
+            return Task.FromResult<string>($"hello, {input}");
+        }
+    }
 }
