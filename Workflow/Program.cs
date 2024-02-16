@@ -3,27 +3,23 @@ using Dapr;
 using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
-using Microsoft.AspNetCore.Mvc;
 using workflow;
 using System.Diagnostics;
-using System.Collections.Concurrent;
-using System.Windows.Markup;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
-        options.RegisterWorkflow<ContinueAsNewWorkflow>();
-        options.RegisterWorkflow<ContinueAsNewWorkflow2>();
+        options.RegisterWorkflow<MonitorWorkflow>();
         options.RegisterWorkflow<FanOutWorkflow>();
-        options.RegisterWorkflow<RaiseEventWorkflow>();
+        options.RegisterWorkflow<ExternalSystemWorkflow>();
         options.RegisterWorkflow<SagaWorkflow>();
 
-        options.RegisterActivity<NotifyActivity>();
-        options.RegisterActivity<NotifyCompensateActivity>();
-        options.RegisterActivity<DelayActivity>();
+        options.RegisterActivity<FastActivity>();
+        options.RegisterActivity<SlowActivity>();
         options.RegisterActivity<AlwaysFailActivity>();
+        options.RegisterActivity<NotifyCompensateActivity>();
     });
 
 // Add services to the container.
@@ -100,7 +96,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10);
 
     string result = string.Empty;
     Stopwatch stopwatch = new Stopwatch();
@@ -108,7 +104,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
     try
     {
         result = await workflowClient.ScheduleNewWorkflowAsync(
-            name: nameof(ContinueAsNewWorkflow),
+            name: nameof(MonitorWorkflow),
             instanceId: workflowId,
             input: orderInfo);
     }
@@ -156,11 +152,11 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new RaiseEventWorkflowPayload(ce.Data?.FailOnTimeout ?? false);
+    var orderInfo = new ExternalSystemWorkflowPayload(ce.Data?.FailOnTimeout ?? false);
 
     try
     {
-        await workflowClient.ScheduleNewWorkflowAsync(nameof(RaiseEventWorkflow), workflowId, orderInfo);
+        await workflowClient.ScheduleNewWorkflowAsync(nameof(ExternalSystemWorkflow), workflowId, orderInfo);
      
         await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
         await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
@@ -268,7 +264,7 @@ app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopi
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant());
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10);
 
     string result = string.Empty;
     try
@@ -345,9 +341,9 @@ app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient dap
 
 app.Run();
 
-public record WorkflowPayload(string RandomData, int Count = 0);
+public record WorkflowPayload(string RandomData, int Itterations = 1);
 
-public record RaiseEventWorkflowPayload(bool failOnTimeout = false);
+public record ExternalSystemWorkflowPayload(bool failOnTimeout = false);
 
 public class StartWorklowRequest
 {

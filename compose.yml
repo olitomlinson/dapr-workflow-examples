@@ -27,12 +27,13 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.13.0-rc.4"
+    image: "daprio/daprd:1.13.0-rc.6"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
      "-resources-path", "/components",
+     "-config", "/components/config.yml",
      "-log-level","warn"]
     volumes:
         - "./components/:/components"
@@ -86,7 +87,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.13.0-rc.4"
+    image: "daprio/daprd:1.13.0-rc.6"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -103,7 +104,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.13.0-rc.4"
+    image: "daprio/dapr:1.13.0-rc.6"
     command: ["./placement", 
     "-port", "50006",
     "-log-level","warn"]

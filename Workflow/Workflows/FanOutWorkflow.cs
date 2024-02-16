@@ -9,11 +9,19 @@ namespace WorkflowConsoleApp.Workflows
         {
             string workflowId = context.InstanceId;
 
-            Enumerable.Range(0,50).ToList().ForEach(async index => { 
-            await context.CallActivityAsync(
-                nameof(DelayActivity),
-                new Notification($"{ workflowId} - Activity #{index}"));
-            });      
+            await context.CallActivityAsync<bool>(nameof(SlowActivity), new Notification($"{workflowId} - Luma"));
+
+            await context.CallActivityAsync<bool>(nameof(FastActivity), new Notification($"{workflowId} - Platform"));
+            
+            var fanOut = new List<Task>();
+    
+            for(int i = 0; i < payload.Itterations; i++)
+            {
+                fanOut.Add(context.CallActivityAsync<bool>(nameof(SlowActivity), new Notification($"{workflowId} - Activity #{i}")));
+            };     
+
+            // WhenAll == AND(x, y, z, a, b)
+            await Task.WhenAll(fanOut); 
         
             return true; 
         }
