@@ -9,10 +9,6 @@ namespace WorkflowConsoleApp.Workflows
         {
             string workflowId = context.InstanceId;
 
-            await context.CallActivityAsync<bool>(nameof(SlowActivity), new Notification($"{workflowId} - Luma"));
-
-            await context.CallActivityAsync<bool>(nameof(FastActivity), new Notification($"{workflowId} - Platform"));
-            
             var fanOut = new List<Task>();
     
             for(int i = 0; i < payload.Itterations; i++)

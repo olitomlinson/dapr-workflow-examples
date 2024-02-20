@@ -9,15 +9,16 @@ namespace WorkflowConsoleApp.Workflows
         {
             string workflowId = context.InstanceId;
 
-            await context.CallActivityAsync<bool>(
+            var guids = await context.CallActivityAsync<Guid[]>(
                 nameof(FastActivity),
-                new Notification($"{workflowId} - Activity #{payload.Itterations}"));
+                new Notification($"{workflowId} - Activity #{payload.Itterations}", payload.Data ));
 
             await context.CreateTimer(TimeSpan.FromSeconds(3));
 
             var newWorkflowPayload = new WorkflowPayload(
                 payload.RandomData,
-                payload.Itterations - 1
+                payload.Itterations - 1,
+                guids
             );
 
             if (payload.Itterations == 0)

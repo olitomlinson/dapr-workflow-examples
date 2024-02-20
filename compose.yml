@@ -1,7 +1,7 @@
 version: '3.4'
 services:
   postgres-db:
-    image: postgres:15.2-alpine
+    image: postgres:16.2-alpine
     restart: always
     environment:
       - POSTGRES_USER=postgres
@@ -11,7 +11,7 @@ services:
     networks:
       - network
     volumes: 
-      - postgres-db:/var/lib/postgresql/data
+      - postgres-db-16-2:/var/lib/postgresql/data-16-2
   ############################
   # Workflow App + Dapr sidecar
   ############################
@@ -33,7 +33,6 @@ services:
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
      "-resources-path", "/components",
-     "-config", "/components/config.yml",
      "-log-level","warn"]
     volumes:
         - "./components/:/components"
@@ -185,5 +184,5 @@ volumes:
     driver: local
   zookeeper_data:
     driver: local
-  postgres-db:
+  postgres-db-16-2:
     driver: local

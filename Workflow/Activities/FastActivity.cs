@@ -2,9 +2,9 @@ using Dapr.Workflow;
 
 namespace WorkflowConsoleApp.Activities
 {
-    public record Notification(string Message);
+    public record Notification(string Message, Guid[]? Data = default);
 
-    public class FastActivity : WorkflowActivity<Notification, bool>
+    public class FastActivity : WorkflowActivity<Notification, Guid[]?>
     {
         readonly ILogger logger;
 
@@ -13,13 +13,11 @@ namespace WorkflowConsoleApp.Activities
             this.logger = loggerFactory.CreateLogger<FastActivity>();
         }
 
-        public override async Task<bool> RunAsync(WorkflowActivityContext context, Notification notification)
+        public override async Task<Guid[]> RunAsync(WorkflowActivityContext context, Notification notification)
         {
-            await Task.Delay(1000);
-
             this.logger.LogInformation(notification.Message);
 
-            return true;
+            return Enumerable.Range(0, 3000).Select(_ => Guid.NewGuid()).ToArray();
         }
     }
 }

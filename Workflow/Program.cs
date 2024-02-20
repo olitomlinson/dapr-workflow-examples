@@ -96,7 +96,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10);
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 3000).Select(_ => Guid.NewGuid()).ToArray());
 
     string result = string.Empty;
     Stopwatch stopwatch = new Stopwatch();
@@ -341,7 +341,7 @@ app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient dap
 
 app.Run();
 
-public record WorkflowPayload(string RandomData, int Itterations = 1);
+public record WorkflowPayload(string RandomData, int Itterations = 1, Guid[]? Data = default);
 
 public record ExternalSystemWorkflowPayload(bool failOnTimeout = false);
 
