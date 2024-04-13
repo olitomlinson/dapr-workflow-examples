@@ -31,7 +31,7 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 //app.UseCloudEvents();
-app.MapSubscribeHandler();
+//app.MapSubscribeHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -42,11 +42,29 @@ if (app.Environment.IsDevelopment())
 
 TimingMetadata timings = new TimingMetadata();
 
+app.MapGet("/dapr/subscribe", async () => {
+
+    app.Logger.LogInformation("dapr/subscribe");
+
+    return new object[] {
+        new {
+            pubsubname = "rabbit-pubsub",
+            topic = "workflowTopic2",
+            route = "/start",
+            metadata = new { 
+                routingKey = Environment.GetEnvironmentVariable("ROUTING_KEY"),
+                queueName = "queue-" + Environment.GetEnvironmentVariable("ROUTING_KEY")
+            }
+        }
+    };
+});
+
 app.MapPost("/health", async () => {
 
     app.Logger.LogInformation("Hello from Workflow!");
 
     return "Hello from Workflow!";
+
 });
 
 app.MapGet("/timings", () => {
@@ -71,13 +89,13 @@ app.MapGet("/timings", () => {
     // }      
 }).Produces<TimingMetadata>();
 
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start", [Topic("rabbit-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
-
+    app.Logger.LogInformation($"App : {Environment.GetEnvironmentVariable("ROUTING_KEY")}");
     app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {2}, my-custom-property {3}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty);
 
     if (ce.Data.Sleep == 666)
@@ -101,7 +119,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 3000).Select(_ => Guid.NewGuid()).ToArray());
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 1).Select(_ => Guid.NewGuid()).ToArray());
 
     string result = string.Empty;
     Stopwatch stopwatch = new Stopwatch();

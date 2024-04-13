@@ -27,7 +27,7 @@ app.MapPost("/health", async () => {
     return "Hello from Client!!";
 });
 
-app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
+app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint, string? routingKey) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
@@ -55,6 +55,8 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
             { "cloudevent.type", "Continue As New"} ,
             { "cloudevent.my-custom-property", "foo" }
         };
+        if (!string.IsNullOrEmpty(routingKey))
+            metadata.Add("routingKey", routingKey);
         
         // var ce = new Workflow.CloudEvent2<StartWorkflowRequest>(request) { 
         //     Id = "wf-" + Guid.NewGuid().ToString(),
@@ -68,7 +70,7 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         {
             //await daprClient.PublishByteEventAsync("redis-pubsub", "workflowTopic", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
 
-            await daprClient.PublishEventAsync("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
+            await daprClient.PublishEventAsync("rabbit-pubsub", "workflowTopic2", request, metadata, cts.Token);
         }
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start", request, cts.Token);
@@ -100,9 +102,16 @@ app.MapPost("/start-distribute", async (DaprClient daprClient, string runId, int
              Sleep = sleep.Value,
              AbortHint = abortHint
             };
+
+        var metadata = new Dictionary<string, string>
+        {
+            { "cloudevent.id", request.Id },
+            { "cloudevent.type", "Continue As New"} ,
+            { "cloudevent.my-custom-property", "foo" }
+        };
         
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request, cts.Token);
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("rabbit-pubsub", "workflowTopic", request, metadata, cts.Token);
         else
         {
             if (index % 2 == 0)

@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: pubsubrabbit
+  name: rabbit-pubsub
 spec:
   type: pubsub.rabbitmq
   version: v1
@@ -16,3 +16,5 @@ spec:
       value: wabbit
     - name: durable
       value: false
+    - name: exchangeKind
+      value: topic
