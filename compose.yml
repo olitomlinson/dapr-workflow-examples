@@ -6,6 +6,7 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=wO2VGDsMKR
+      - max_wal_size=2GB
     ports:
       - '5432:5432'
     networks:
@@ -22,18 +23,21 @@ services:
     ports:
       - "3500:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
       - "5113:5111"
+      - "7777:7776"
     depends_on:
       - placement
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.13.0-rc.6"
+    image: "daprio/daprd:1.13.0"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50006",
      "-resources-path", "/components",
-     "-log-level","warn"]
+     "-enable-profiling",
+     "-profile-port","7776",
+     "-log-level","debug"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -86,13 +90,13 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.13.0-rc.6"
+    image: "daprio/daprd:1.13.0"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
     "-dapr-http-port", "3500",
     "-resources-path", "/components",
-    "-log-level","warn"]
+    "-log-level","debug"]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -103,10 +107,22 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.13.0-rc.6"
+    image: "daprio/dapr:1.13.0"
     command: ["./placement", 
     "-port", "50006",
     "-log-level","warn"]
+    networks:
+      - network
+  ###RMQ
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine    
+    environment:
+    - RABBITMQ_DEFAULT_USER=elmerfud
+    - RABBITMQ_DEFAULT_PASS=wabbit
+    ports:
+      - "5672:5672"
+      - "25672:15672"
     networks:
       - network
   ############################

@@ -42,9 +42,14 @@ if (app.Environment.IsDevelopment())
 
 TimingMetadata timings = new TimingMetadata();
 
-app.MapGet("health", () => "Hello World!");
+app.MapPost("/health", async () => {
 
-app.MapGet("timings", () => {
+    app.Logger.LogInformation("Hello from Workflow!");
+
+    return "Hello from Workflow!";
+});
+
+app.MapGet("/timings", () => {
     return timings;
     // var groups = timings.Splits.Durations.GroupBy(x =>
     // {
@@ -73,7 +78,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
         app.Logger.LogInformation("waiting...");
     }
 
-    app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {3}", ce.Id, ce.Type, ce.Source, ce.Specversion);
+    app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {2}, my-custom-property {3}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty);
 
     if (ce.Data.Sleep == 666)
     {

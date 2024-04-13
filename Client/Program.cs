@@ -1,10 +1,7 @@
 
-using System.Reflection.Metadata;
 using System.Text.Json;
-using Dapr;
 using Dapr.Client;
-using Microsoft.VisualBasic;
-using Workflow;
+using Grpc.Net.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +19,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.MapPost("/health", async () => {
+
+    app.Logger.LogInformation("Hello from Client!");
+
+    return "Hello from Client!!";
+});
 
 app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
 {
@@ -48,21 +52,23 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         var metadata = new Dictionary<string, string>
         {
             { "cloudevent.id", request.Id },
-            { "cloudevent.type", "Continue As New" }
+            { "cloudevent.type", "Continue As New"} ,
+            { "cloudevent.my-custom-property", "foo" }
         };
         
-        // var ce = new CloudEvent2<StartWorkflowRequest>(request) { 
+        // var ce = new Workflow.CloudEvent2<StartWorkflowRequest>(request) { 
         //     Id = "wf-" + Guid.NewGuid().ToString(),
         //     Source = new Uri("/cloudevents/spec/pull/123"), 
-        //     Type = "my-type" };
+        //     Type = "my-type",
+        //     MyCustomProperty = "bar" };
 
-        //var content = JsonSerializer.SerializeToUtf8Bytes(ce);
+        // var content = JsonSerializer.SerializeToUtf8Bytes(ce);
 
         if (async.HasValue && async.Value == true)
         {
             //await daprClient.PublishByteEventAsync("redis-pubsub", "workflowTopic", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
 
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
+            await daprClient.PublishEventAsync("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
         }
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start", request, cts.Token);

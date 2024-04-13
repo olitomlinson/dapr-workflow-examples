@@ -15,4 +15,7 @@ public class CloudEvent2<TData> : Dapr.CloudEvent<TData>
 
     [JsonPropertyName("specversion")]
     public string Specversion { get; init; }
+
+    [JsonPropertyName("my-custom-property")]
+    public string MyCustomProperty { get ;init; }
 }

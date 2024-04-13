@@ -21,7 +21,7 @@ namespace WorkflowConsoleApp.Workflows
                 guids
             );
 
-            if (payload.Itterations == 0)
+            if (newWorkflowPayload.Itterations == 0)
                  return true;
 
             context.ContinueAsNew(newWorkflowPayload);
