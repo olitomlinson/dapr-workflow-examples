@@ -5,6 +5,7 @@ using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
 using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,14 +72,14 @@ app.MapGet("/timings", () => {
     // }      
 }).Produces<TimingMetadata>();
 
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
-    app.Logger.LogInformation("ce fields : id {2}, type {0}, source {1}, specversion {2}, my-custom-property {3}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty);
+    app.Logger.LogInformation("ce fields : id {0}, type {1}, source {2}, specversion {3}, my-custom-property {4}, kafka-partition {5}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition);
 
     if (ce.Data.Sleep == 666)
     {
@@ -101,7 +102,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( DaprClien
 
     string randomData = Guid.NewGuid().ToString();
     string workflowId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
-    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 3000).Select(_ => Guid.NewGuid()).ToArray());
+    var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 1).Select(_ => Guid.NewGuid()).ToArray());
 
     string result = string.Empty;
     Stopwatch stopwatch = new Stopwatch();
