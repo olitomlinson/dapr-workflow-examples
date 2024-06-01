@@ -53,10 +53,10 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         {
             { "cloudevent.id", request.Id },
             { "cloudevent.type", "Continue As New"} ,
-            { "cloudevent.my-custom-property", "foo" }
+            { "my-custom-property", "foo" }
         };
         
-        // var ce = new Workflow.CloudEvent2<StartWorkflowRequest>(request) { 
+        // var ce = new Workflow.CustomCloudEvent<StartWorkflowRequest>(request) { 
         //     Id = "wf-" + Guid.NewGuid().ToString(),
         //     Source = new Uri("/cloudevents/spec/pull/123"), 
         //     Type = "my-type",
@@ -66,7 +66,7 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
 
         if (async.HasValue && async.Value == true)
         {
-            //await daprClient.PublishByteEventAsync("redis-pubsub", "workflowTopic", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
+            //await daprClient.PublishByteEventAsync("kafka-pubsub", "workflowTopic", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
 
             await daprClient.PublishEventAsync("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
         }

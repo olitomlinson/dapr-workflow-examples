@@ -17,7 +17,7 @@ namespace WorkflowConsoleApp.Activities
         {
             this.logger.LogInformation(notification.Message);
 
-            return Enumerable.Range(0, 3000).Select(_ => Guid.NewGuid()).ToArray();
+            return Enumerable.Range(0, 1).Select(_ => Guid.NewGuid()).ToArray();
         }
     }
 }

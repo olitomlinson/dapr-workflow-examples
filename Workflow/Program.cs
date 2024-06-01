@@ -72,14 +72,14 @@ app.MapGet("/timings", () => {
     // }      
 }).Produces<TimingMetadata>();
 
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
-    app.Logger.LogInformation("ce fields : id {0}, type {1}, source {2}, specversion {3}, my-custom-property {4}, kafka-partition {5}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition);
+    app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
 
     if (ce.Data.Sleep == 666)
     {
@@ -130,7 +130,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHead
     };   
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -242,7 +242,7 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -294,7 +294,7 @@ app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopi
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CloudEvent2<StartWorklowRequest>? ce) => {
+app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
