@@ -53,7 +53,8 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         {
             { "cloudevent.id", request.Id },
             { "cloudevent.type", "Continue As New"} ,
-            { "my-custom-property", "foo" }
+            { "my-custom-property", "foo" },
+            { "partitionKey", Guid.NewGuid().ToString() }
         };
         
         // var ce = new Workflow.CustomCloudEvent<StartWorkflowRequest>(request) { 
@@ -72,44 +73,6 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
         }
         else
             await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start", request, cts.Token);
-        
-        app.Logger.LogInformation("start Id: {0}", request.Id);
-        
-        results.Add(new StartWorkflowResponse { Index = index, Id = request.Id });
-    });
-    return results;
-}).Produces<List<StartWorkflowResponse>>();
-
-app.MapPost("/start-distribute", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
-{
-    if (!count.HasValue || count.Value < 1 )
-        count = 1;
-
-    if (!sleep.HasValue)
-        sleep = 0;
-
-    var results = new List<StartWorkflowResponse>();
-
-    var cts = new CancellationTokenSource();
-
-    var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
-
-    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
-        var request = new StartWorkflowRequest{
-             Id = $"{index}-{runId}",
-             Sleep = sleep.Value,
-             AbortHint = abortHint
-            };
-        
-        if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "workflowTopic", request, cts.Token);
-        else
-        {
-            if (index % 2 == 0)
-                await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start", request, cts.Token);
-            else
-                await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-b", "start", request, cts.Token);
-        }
         
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
