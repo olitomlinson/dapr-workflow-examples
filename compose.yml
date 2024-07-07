@@ -29,15 +29,15 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.13.2"
+    image: "daprio/daprd:1.14.0-rc.2"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
-     "-placement-host-address", "placement:50006",
+     "-placement-host-address", "placement:50005",
+     "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
-     "-enable-profiling",
-     "-profile-port","7776",
-     "-log-level","debug"]
+     "-config", "/components/config.yml",
+     "-log-level","info"]
     volumes:
         - "./components/:/components"
     depends_on:
@@ -90,13 +90,13 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.13.2"
+    image: "daprio/daprd:1.14.0-rc.2"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
     "-dapr-http-port", "3500",
     "-resources-path", "/components",
-    "-log-level","debug"]
+    "-log-level","warn"]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -107,12 +107,27 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.13.2"
+    image: "daprio/dapr:1.14.0-rc.2"
     command: ["./placement", 
-    "-port", "50006",
+    "-port", "50005",
     "-log-level","warn"]
     networks:
       - network
+
+  # ############################
+  # # Dapr Scheduler service
+  # ############################
+  scheduler:
+    image: "daprio/dapr:1.14.0-rc.2"
+    command: ["./scheduler", 
+    "--port", "50006",
+    "--placement-address", "placement:50005"
+    ]
+    volumes: 
+      - ./dapr/scheduler/data/0:/data-default-dapr-scheduler-server-0
+    networks:
+      - network
+
   ############################
   # Zookeeper 
   ############################
