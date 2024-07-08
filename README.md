@@ -1,32 +1,39 @@
 # dapr-workflow-examples
 
-This is now a repo for helping reproduce and debug various Dapr Workflow issues.
+This repo is for load testing Dapr Workflows via Docker Compose. 
 
-### Run compose as normal
+In the past, this has flushed out many concurrency issues in the underlying durabletask-go library, which have been subsequently addressed in newer versions of the Dapr runtime. `main` currently targets `1.14.0-rc.2` of the runtime which is the first vresion to address the horizontal scaling constraints by inclusion of the new Actor Reminder sub-system.
 
-1. `docker compose build`
-2. `docker compose up`
-
-![image](https://github.com/olitomlinson/dapr-workflow-examples/assets/4224880/9c6b6596-aab6-4f04-91b7-d87071a740c3)
-
-
-
-### Run compose, but with a local debugger for the Workflow app
+### Run with 2 instances of the Workflow App
 
 1. `docker compose build`
-2. `docker compose -f compose.yml -f compose.debug-workflow-app.yml up`
-3. in VS Code, Run the launch task `Debug workflow app` to debug the Workflow app
-   
-![image](https://github.com/olitomlinson/dapr-workflow-examples/assets/4224880/2cced844-6c42-4f5a-af62-d174a0309bda)
+2. `docker compose -f compose-2-instances.yml up`
+
+### Run with 3 instances of the Workflow App
+
+1. `docker compose build`
+2. `docker compose -f compose-3-instances.yml up`
 
 
 
 ### Run a simple workflow
 
-Run a simple by making a POST request to 
+This will create many workflow instances randomly distributed across the Workflow App instances.
 
-```http://localhost:5112/start?runId={runId}&count=1&async=false```
+Run a simple workflow by making a POST request to 
+
+```http://localhost:5112/start?runId={runId}&count=1000&async=true```
 
 - Where `{runId}` is a unique value i.e. UUID/GUID.
-- Increase the amount of workflows created by changing the `count` property
-- `async = false` will use service invocation to invoke the workflow. `async = true` will use PubSub.
+- Increase/decrease the amount of workflows created by changing the `count` property
+
+#### What does the workflow do?
+
+Go to `workflow/workflows/MonitorWorkflow.cs` to see the code of the workflow. 
+
+In short summary, this workflow will Call an `Activity` with a very small payload (`Activities/FastActivity.cs`) and the Activity will return a very small payload in response. The payload is not used for any purpose other than logging out it's progress. Once the Activity completes and control is returned to the Workflow, the workflow will go to sleep for 3 seconds. After which the workflow will enter into the eternal workflow pattern, and the above process will repeat. The process will run 10 times. After which the Workflow will exit successfully. 
+
+A typical E2E duration of the workflow is approx 30 seconds. However running more workflow instances concurrently will increase the E2E duration of each workflow, which is expected given the resource-bound environment of using docker compose. 
+
+This would be addressed by horizontally scaling the Workflow App across more compute resources (i.e. in a real kubernetes environment) - this is something I aim to test in the near future and provide an example for.
+
