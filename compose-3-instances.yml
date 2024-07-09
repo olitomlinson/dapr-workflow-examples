@@ -122,8 +122,6 @@ services:
   #Client App + Dapr sidecar
   ###########################
   client-app:
-    environment:
-      - PARTITION_KEYS=1:2:4
     build:
       context: .
       dockerfile: Client/Dockerfile

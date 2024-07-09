@@ -6,15 +6,15 @@ In the past, this has flushed out many concurrency issues in the underlying dura
 
 ### Run with 2 instances of the Workflow App
 
-1. `docker compose build`
+1. `docker compose -f compose-2-instances.yml build`
 2. `docker compose -f compose-2-instances.yml up`
 
 ### Run with 3 instances of the Workflow App
 
-1. `docker compose build`
+1. `docker compose -f compose-3-instances.yml build`
 2. `docker compose -f compose-3-instances.yml up`
 
-
+*Important*: When swapping between 2 and 3 instances, it is important to delete the existing topics that are created in Kafka, so that they are recreated with the correct number of partitions. This is easy to do via Kafka UI that is running on `localhost:8080`
 
 ### Run a simple workflow
 
