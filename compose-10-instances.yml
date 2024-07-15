@@ -39,6 +39,8 @@ services:
      "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
      "-config", "/components/config.yml",
+    #   "-enable-profiling",
+    #  "-profile-port","7776",
      "-log-level","info"]
     volumes:
       - "./components/:/components"
