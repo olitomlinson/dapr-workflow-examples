@@ -15,12 +15,41 @@ spec:
         app: workflow
       annotations:
         dapr.io/enabled: "true"
-        dapr.io/app-id: "workflow"
+        dapr.io/app-id: "workflow-a"
         dapr.io/app-port: "5111"
+        dapr.io/config: "mydaprconfig"
     spec:
       containers:
       - name: workflow
-        image: workflowtest:latest
+        image: workflow:1.0.0
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5111
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: client
+  labels:
+    app: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client
+  template:
+    metadata:
+      labels:
+        app: client
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "client"
+        dapr.io/app-port: "5111"
+        dapr.io/config: "mydaprconfig"
+    spec:
+      containers:
+      - name: client
+        image: client:1.0.1
         imagePullPolicy: Never
         ports:
         - containerPort: 5111

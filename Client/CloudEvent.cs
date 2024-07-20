@@ -3,10 +3,9 @@ using System.Net.Mime;
 
 namespace Workflow;
 
-
-public class CloudEvent2<TData> : Dapr.CloudEvent<TData>
+public class CustomCloudEvent<TData> : Dapr.CloudEvent<TData>
 {
-    public CloudEvent2(TData data) : base(data)
+    public CustomCloudEvent(TData data) : base(data)
     {
         
     }

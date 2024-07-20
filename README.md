@@ -2,7 +2,7 @@
 
 This repo is for load testing Dapr Workflows via Docker Compose. 
 
-In the past, this has flushed out many concurrency issues in the underlying durabletask-go library, which have been subsequently addressed in newer versions of the Dapr runtime. `main` currently targets `1.14.0-rc.2` of the runtime which is the first vresion to address the horizontal scaling constraints by inclusion of the new Actor Reminder sub-system.
+In the past, this has flushed out many concurrency issues in the underlying durabletask-go library, which have been subsequently addressed in newer versions of the Dapr runtime. `main` currently targets `1.14.0-rc3` of the runtime which is the first vresion to address the horizontal scaling constraints by inclusion of the new Actor Reminder sub-system.
 
 ### Run with 2 instances of the Workflow App
 

@@ -1,7 +1,9 @@
 
 using System.Text.Json;
+using Dapr;
 using Dapr.Client;
 using Grpc.Net.Client;
+using Workflow;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,8 +74,12 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
             await daprClient.PublishEventAsync("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
         }
         else
-            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start", request, cts.Token);
-        
+        {
+            var wrappedRequest = new CustomCloudEvent<StartWorkflowRequest>(request) {
+                Id = request.Id,
+            };
+            await daprClient.InvokeMethodAsync<CloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "start", wrappedRequest, cts.Token);
+        }
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
         results.Add(new StartWorkflowResponse { Index = index, Id = request.Id });
@@ -164,8 +170,12 @@ app.MapPost("/start-fanout-workflow", async (DaprClient daprClient, string runId
         if (async.HasValue && async.Value == true)
             await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "FanoutWorkflowTopic", request, cts.Token );
         else
-            await daprClient.InvokeMethodAsync<StartWorkflowRequest,StartWorkflowResponse>("workflow-a", "start-fanout-workflow", request, cts.Token);
-        
+        {
+            var wrappedRequest = new CustomCloudEvent<StartWorkflowRequest>(request) {
+                Id = request.Id,
+            };
+            await daprClient.InvokeMethodAsync<CustomCloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "start-fanout-workflow", wrappedRequest, cts.Token);
+        }
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
         results.Add(new StartWorkflowResponse { Index = index, Id = request.Id });

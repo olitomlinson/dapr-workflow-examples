@@ -31,17 +31,17 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50005",
-     "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
-     "-config", "/components/config.yml",
+     "-config", "/dapr-config/config.yml",
      "-log-level","info"]
     volumes:
       - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
     depends_on:
       postgres-db:
         condition: service_started
@@ -61,7 +61,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -78,27 +78,12 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.14.0-rc.2"
+    image: "daprio/dapr:1.14.0-rc.3"
     command: ["./placement", 
     "-port", "50005",
     "-log-level","warn"]
     networks:
       - network
-
-  # ############################
-  # # Dapr Scheduler service
-  # ############################
-  scheduler:
-    image: "daprio/dapr:1.14.0-rc.2"
-    command: ["./scheduler", 
-    "--port", "50006",
-    "--placement-address", "placement:50005"
-    ]
-    volumes: 
-      - ./dapr/scheduler/data/0:/data-default-dapr-scheduler-server-0
-    networks:
-      - network
-
   ############################
   # Zookeeper 
   ############################
@@ -144,7 +129,7 @@ services:
       KAFKA_LOG4J_ROOT_LOGLEVEL: ERROR
       KAFKA_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.apache.kafka=ERROR,kafka=ERROR,kafka.cluster=ERROR,kafka.controller=ERROR,kafka.coordinator=ERROR,kafka.log=ERROR,kafka.server=ERROR,kafka.zookeeper=ERROR,state.change.logger=ERROR
       KAFKA_JMX_PORT: 9997
-      KAFKA_NUM_PARTITIONS: 1
+      KAFKA_NUM_PARTITIONS: 10
   ############################
   # Kafka UI
   ############################

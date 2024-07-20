@@ -36,7 +36,7 @@ services:
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50005",
-     "-scheduler-host-address", "scheduler-0:50006,scheduler-1:50006,scheduler-2:50006",
+     "-scheduler-host-address", "scheduler-0:50006",
      "-resources-path", "/components",
      "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
      "-log-level","info"]
@@ -92,48 +92,15 @@ services:
   scheduler-0:
     image: "daprio/dapr:1.14.0-rc.3"
     command: ["./scheduler", 
+    "--port", "50006",
     "--placement-address", "placement:50005",
     "--etcd-data-dir", "/var/run/dapr/scheduler",
-    "--replica-count", "3",
-    "--id","scheduler-0",
-    "--initial-cluster", "scheduler-0=http://scheduler-0:2380,scheduler-1=http://scheduler-1:2380,scheduler-2=http://scheduler-2:2380",
-    "--etcd-client-ports", "scheduler-0=2379,scheduler-1=2379,scheduler-2=2379",
-    "--etcd-client-http-ports", "scheduler-0=2330,scheduler-1=2330,scheduler-2=2330"
     ]
     volumes: 
       - ./dapr_scheduler/0:/var/run/dapr/scheduler
     networks:
       - network
-  scheduler-1:
-    image: "daprio/dapr:1.14.0-rc.3"
-    command: ["./scheduler", 
-    "--placement-address", "placement:50005",
-    "--etcd-data-dir", "/var/run/dapr/scheduler",
-    "--replica-count", "3",
-    "--id","scheduler-1",
-    "--initial-cluster", "scheduler-1=http://scheduler-1:2380,scheduler-0=http://scheduler-0:2380,scheduler-2=http://scheduler-2:2380",
-    "--etcd-client-ports", "scheduler-0=2379,scheduler-1=2379,scheduler-2=2379",
-    "--etcd-client-http-ports", "scheduler-0=2330,scheduler-1=2330,scheduler-2=2330"
-    ]
-    volumes: 
-      - ./dapr_scheduler/1:/var/run/dapr/scheduler
-    networks:
-      - network
-  scheduler-2:
-    image: "daprio/dapr:1.14.0-rc.3"
-    command: ["./scheduler", 
-    "--placement-address", "placement:50005",
-    "--etcd-data-dir", "/var/run/dapr/scheduler",
-    "--replica-count", "3",
-    "--id","scheduler-2",
-    "--initial-cluster", "scheduler-2=http://scheduler-2:2380,scheduler-0=http://scheduler-0:2380,scheduler-1=http://scheduler-1:2380",
-    "--etcd-client-ports", "scheduler-0=2379,scheduler-1=2379,scheduler-2=2379",
-    "--etcd-client-http-ports", "scheduler-0=2330,scheduler-1=2330,scheduler-2=2330"
-    ]
-    volumes: 
-      - ./dapr_scheduler/2:/var/run/dapr/scheduler
-    networks:
-      - network
+
   ############################
   # Zookeeper 
   ############################

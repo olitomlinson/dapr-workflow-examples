@@ -19,6 +19,7 @@ builder.Services.AddDaprWorkflow(options =>
 
         options.RegisterActivity<FastActivity>();
         options.RegisterActivity<SlowActivity>();
+        options.RegisterActivity<VerySlowActivity>();
         options.RegisterActivity<AlwaysFailActivity>();
         options.RegisterActivity<NotifyCompensateActivity>();
     });
@@ -72,14 +73,16 @@ app.MapGet("/timings", () => {
     // }      
 }).Produces<TimingMetadata>();
 
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+// app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
         app.Logger.LogInformation("waiting...");
     }
 
-    app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
+    // app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
+    app.Logger.LogInformation("ce.id {0}");
 
     if (ce.Data.Sleep == 666)
     {

@@ -31,17 +31,18 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-placement-host-address", "placement:50005",
      "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
-     "-config", "/components/config.yml",
+     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
      "-log-level","info"]
     volumes:
       - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
     depends_on:
       postgres-db:
         condition: service_started
@@ -65,18 +66,19 @@ services:
     networks:
       - network
   workflow-dapr-b:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-dapr-grpc-port", "50002",
      "-placement-host-address", "placement:50005",
      "-scheduler-host-address", "scheduler:50006",
-     "-config", "/components/config.yml",
      "-resources-path", "/components",
+     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
      "-log-level","info"]
     volumes:
-        - "./components/:/components"
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
     depends_on:
       postgres-db:
         condition: service_started
@@ -100,18 +102,19 @@ services:
     networks:
       - network
   workflow-dapr-c:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
      "-dapr-grpc-port", "50003",
      "-placement-host-address", "placement:50005",
      "-scheduler-host-address", "scheduler:50006",
-     "-config", "/components/config.yml",
      "-resources-path", "/components",
+     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
      "-log-level","info"]
     volumes:
-        - "./components/:/components"
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
     depends_on:
       postgres-db:
         condition: service_started
@@ -131,7 +134,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.14.0-rc.2"
+    image: "daprio/daprd:1.14.0-rc.3"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -148,7 +151,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.14.0-rc.2"
+    image: "daprio/dapr:1.14.0-rc.3"
     command: ["./placement", 
     "-port", "50005",
     "-log-level","warn"]
@@ -159,7 +162,7 @@ services:
   # # Dapr Scheduler service
   # ############################
   scheduler:
-    image: "daprio/dapr:1.14.0-rc.2"
+    image: "daprio/dapr:1.14.0-3"
     command: ["./scheduler", 
     "--port", "50006",
     "--placement-address", "placement:50005"
