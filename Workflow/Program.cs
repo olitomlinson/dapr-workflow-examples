@@ -5,7 +5,7 @@ using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
 using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +25,6 @@ builder.Services.AddDaprWorkflow(options =>
     });
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
