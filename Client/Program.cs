@@ -29,7 +29,7 @@ app.MapPost("/health", async () => {
     return "Hello from Client!!";
 });
 
-app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
+app.MapPost("/start/monitor-workflow", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
@@ -69,16 +69,16 @@ app.MapPost("/start", async (DaprClient daprClient, string runId, int? count, bo
 
         if (async.HasValue && async.Value == true)
         {
-            //await daprClient.PublishByteEventAsync("kafka-pubsub", "workflowTopic", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
+            //await daprClient.PublishByteEventAsync("kafka-pubsub", "monitor-workflow", content.AsMemory(), "application/cloudevents+json", null, cts.Token);
 
-            await daprClient.PublishEventAsync("kafka-pubsub", "workflowTopic", request, metadata, cts.Token);
+            await daprClient.PublishEventAsync("kafka-pubsub", "monitor-workflow", request, metadata, cts.Token);
         }
         else
         {
             var wrappedRequest = new CustomCloudEvent<StartWorkflowRequest>(request) {
                 Id = request.Id,
             };
-            await daprClient.InvokeMethodAsync<CloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "start", wrappedRequest, cts.Token);
+            await daprClient.InvokeMethodAsync<CloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "monitor-workflow", wrappedRequest, cts.Token);
         }
         app.Logger.LogInformation("start Id: {0}", request.Id);
         
@@ -102,9 +102,7 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
     var results = new List<StartWorkflowResponse>();
 
     var cts = new CancellationTokenSource();
-
     var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
-
     await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
         var request = new StartWorkflowRequest{ 
             Id = $"{index}-{runId}",
@@ -121,32 +119,8 @@ app.MapPost("/start-raise-event-workflow", async (DaprClient daprClient, string 
     return results;
 }).Produces<List<StartWorkflowResponse>>();
 
-app.MapPost("/start-raise-event-workflow-event", async (DaprClient daprClient, string runId, int? count) =>
-{
-    if (!count.HasValue || count.Value < 1 )
-        count = 1;
 
-    var results = new List<StartWorkflowResponse>();
-
-    var cts = new CancellationTokenSource();
-
-    var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
-
-    await Parallel.ForEachAsync(Enumerable.Range(0, count.Value),options,async(index, token) => {
-   
-        var payload = new RaiseEvent<string>(){
-            InstanceId = $"{index}-{runId}",
-            EventName = "wait-event",
-            EventData = Guid.NewGuid().ToString()
-        };
-        
-        await daprClient.InvokeMethodAsync<RaiseEvent<string>>("workflow-a", "start-raise-event-workflow-event", payload, cts.Token);
-
-        app.Logger.LogInformation("event raised: {0}", payload.InstanceId);
-    });
-});
-
-app.MapPost("/start-fanout-workflow", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
+app.MapPost("/start/fanout-workflow", async (DaprClient daprClient, string runId, int? count, bool? async, int? sleep, string? abortHint) =>
 {
     if (!count.HasValue || count.Value < 1 )
         count = 1;
@@ -168,13 +142,13 @@ app.MapPost("/start-fanout-workflow", async (DaprClient daprClient, string runId
             };
 
         if (async.HasValue && async.Value == true)
-            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "FanoutWorkflowTopic", request, cts.Token );
+            await daprClient.PublishEventAsync<StartWorkflowRequest>("kafka-pubsub", "fanout-workflow", request, cts.Token );
         else
         {
             var wrappedRequest = new CustomCloudEvent<StartWorkflowRequest>(request) {
                 Id = request.Id,
             };
-            await daprClient.InvokeMethodAsync<CustomCloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "start-fanout-workflow", wrappedRequest, cts.Token);
+            await daprClient.InvokeMethodAsync<CustomCloudEvent<StartWorkflowRequest>,StartWorkflowResponse>("workflow-a", "fanout-workflow", wrappedRequest, cts.Token);
         }
         app.Logger.LogInformation("start Id: {0}", request.Id);
         

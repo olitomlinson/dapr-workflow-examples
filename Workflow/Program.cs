@@ -4,7 +4,6 @@ using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
-using System.Diagnostics;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +21,7 @@ builder.Services.AddDaprWorkflow(options =>
         options.RegisterActivity<VerySlowActivity>();
         options.RegisterActivity<AlwaysFailActivity>();
         options.RegisterActivity<NotifyCompensateActivity>();
+        options.RegisterActivity<NoOpActivity>();
     });
 
 // Add services to the container.
@@ -41,8 +41,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-TimingMetadata timings = new TimingMetadata();
-
 app.MapPost("/health", async () => {
 
     app.Logger.LogInformation("Hello from Workflow!");
@@ -50,30 +48,9 @@ app.MapPost("/health", async () => {
     return "Hello from Workflow!";
 });
 
-app.MapGet("/timings", () => {
-    return timings;
-    // var groups = timings.Splits.Durations.GroupBy(x =>
-    // {
-    //     var stamp = x.Timestamp;
-    //     stamp = stamp.AddMinutes(-(stamp.Minute % 5));
-    //     stamp = stamp.AddMilliseconds(-stamp.Millisecond - 1000 * stamp.Second);
-    //     return stamp;
-    // })
-    // .Select(g => new { TimeStamp = g.Key, Value = g.Average(s => s.Duration) })
-    // .ToList();
-
-    // timings.SplitsGrouped = new List<TimingItem>();
-    // foreach(var a in groups){
-    //     timings.SplitsGrouped.Add(new TimingItem() {
-    //         Timestamp = a.TimeStamp,
-    //         Duration = a.Value
-    //     })
-        
-    // }      
-}).Produces<TimingMetadata>();
 
 // app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
-app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -107,8 +84,7 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async (DaprClient
     var orderInfo = new WorkflowPayload(randomData.ToLowerInvariant(), 10, Enumerable.Range(0, 1).Select(_ => Guid.NewGuid()).ToArray());
 
     string result = string.Empty;
-    Stopwatch stopwatch = new Stopwatch();
-    stopwatch.Start();
+
     try
     {
         result = await workflowClient.ScheduleNewWorkflowAsync(
@@ -123,9 +99,6 @@ app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async (DaprClient
             Id = workflowId + " error"
         };
     }
-    stopwatch.Stop();
-    //app.Logger.LogInformation($"duration : {stopwatch.ElapsedMilliseconds}");
-    timings.Splits.Durations.Add(new TimingItem() { Timestamp = DateTime.UtcNow, Duration = (int)stopwatch.ElapsedMilliseconds});
 
     return new StartWorkflowResponse(){
         Id = result
@@ -166,11 +139,11 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     {
         await workflowClient.ScheduleNewWorkflowAsync(nameof(ExternalSystemWorkflow), workflowId, orderInfo);
      
-        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
-        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
-        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
-        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
-        await daprClient.RaiseWorkflowEventAsync(workflowId, "dapr", "wait-event", Guid.NewGuid().ToString());
+        var cts = new CancellationTokenSource();
+        var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
+        await Parallel.ForEachAsync(Enumerable.Range(0, 1000),options,async(index, token) => {
+            await workflowClient.RaiseEventAsync(workflowId,"event-name",$"{index}-{Guid.NewGuid()}");
+        });
     }
     catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
@@ -184,23 +157,7 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
         Id = workflowId
     };   
 }).Produces<StartWorkflowResponse>();
-
-app.MapPost("/start-raise-event-workflow-event", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, RaiseEvent<string> o) => {
-    while (!await daprClient.CheckHealthAsync())
-    {
-        Thread.Sleep(TimeSpan.FromSeconds(5));
-        app.Logger.LogInformation("waiting...");
-    }
-
-    app.Logger.LogInformation("raising event... : {InstanceId}, {EventName}, {EventData}", o.InstanceId, o.EventName, o.EventData);
-
-    // This works as expected
-    await daprClient.RaiseWorkflowEventAsync(o.InstanceId, "dapr", o.EventName, o.EventData);
-
-    // This doesn't, eventPayload arrives in workflow as null 
-    //await workflowClient.RaiseEventAsync(o.InstanceId, o.EventName, o.EventData);
-});
-
+ 
 
 app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, string runId, int? count) => {
     while (!await daprClient.CheckHealthAsync())
@@ -244,7 +201,7 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/start-fanout-workflow", [Topic("kafka-pubsub", "FanoutWorkflowTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/fanout-workflow", [Topic("kafka-pubsub", "fanout-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));

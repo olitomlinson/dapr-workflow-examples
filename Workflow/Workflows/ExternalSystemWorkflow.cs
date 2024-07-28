@@ -1,51 +1,66 @@
+using System.Text;
 using Dapr.Workflow;
+using Newtonsoft.Json;
 using WorkflowConsoleApp.Activities;
 
 namespace WorkflowConsoleApp.Workflows
 {
-    public class ExternalSystemWorkflow : Workflow<ExternalSystemWorkflowPayload, string>
+    public class ExternalSystemWorkflow : Workflow<ExternalSystemWorkflowPayload, Dictionary<string,int>>
     {
-        public override async Task<string> RunAsync(WorkflowContext context, ExternalSystemWorkflowPayload payload)
-        {
-            
-            
+        public override async Task<Dictionary<string,int>> RunAsync(WorkflowContext context, ExternalSystemWorkflowPayload payload)
+        {     
             var cts = new CancellationTokenSource();
 
             Task timeout = context.CreateTimer(TimeSpan.FromSeconds(30), cts.Token);
 
-            var ev1 = context.WaitForExternalEventAsync<string>("wait-event");
-            var ev2 = context.WaitForExternalEventAsync<string>("wait-event");
-            var ev3 = context.WaitForExternalEventAsync<string>("wait-event");
-            var ev4 = context.WaitForExternalEventAsync<string>("wait-event");
-            var ev5 = context.WaitForExternalEventAsync<string>("wait-event");
+            List<Task<string>> results = new List<Task<string>>();
+
+            for(int i = 0; i < 1000; i++)
+            {
+                results.Add(context.WaitForExternalEventAsync<string>("wait-event"));
+            }
 
             // WhenAll == AND(x, y, z, a, b)
-            var externalEvents = Task.WhenAll(ev1, ev2, ev3, ev4, ev5);
+            var externalEvents = Task.WhenAll(results);
 
             // WhenAny == XOR(x, y)
             var winner = await Task.WhenAny(externalEvents, timeout);
 
+            Dictionary<string, int> receivedEvents = new Dictionary<string, int>();
+
             if (winner == externalEvents)
             {
                 cts.Cancel();
-                return $"external events all received : {ev1.Result}, {ev2.Result}, {ev3.Result}, {ev4.Result}, {ev5.Result}";
+                foreach (var result in results)
+                {
+                    if (!receivedEvents.TryAdd(result.Result, 1))
+                    {
+                        var count = receivedEvents[result.Result];
+                        receivedEvents[result.Result] = count += 1;
+                    }
+                }
+                
+                return receivedEvents;
             }
             else if (winner == timeout)
             {
-                var taskStatus = $"all events : {externalEvents.Status}. ";
-                taskStatus += $"[ev1 = {ev1.Status}] ";
-                taskStatus += $"[ev2 = {ev2.Status}] ";
-                taskStatus += $"[ev3 = {ev3.Status}] ";
-                taskStatus += $"[ev4 = {ev4.Status}] ";
-                taskStatus += $"[ev5 = {ev5.Status}] ";
+                var sb = new StringBuilder();
+                sb.Append("Events status : ");
+                foreach (var result in results)
+                {
+                    sb.AppendLine(result.Status.ToString());
+                }
 
                 if (payload.failOnTimeout)
-                    throw new Exception($"Workflow Timed out after 30 seconds, {taskStatus}");
+                    throw new Exception($"Workflow Timed out after 30 seconds : {receivedEvents}");
                 else
-                    return $"timed out after 30s, {taskStatus}";
+                {
+                    receivedEvents.Add("FAILED ON TIMEOUT", 0);
+                    return receivedEvents;
+                }   
             }
             
-            return "error";
+            return null;
         }
     }
 }
