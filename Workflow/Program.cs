@@ -4,6 +4,7 @@ using Dapr.Client;
 using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
+using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -173,6 +174,7 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
     var terminated = 0;
     var suspended = 0;
     var unknown = 0;
+    Dictionary<string,WorkflowState> Running = new Dictionary<string, WorkflowState>();
 
     foreach(var i in Enumerable.Range(0, count.Value))
     {
@@ -193,9 +195,17 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
             suspended += 1;
         else if (state.RuntimeStatus == WorkflowRuntimeStatus.Unknown)
             unknown += 1;
+
+        if (state.RuntimeStatus == WorkflowRuntimeStatus.Running)
+            Running.Add(instanceId, state);
     }
     
     var response = $"Completed : {complete}, Failed : {failed}, Running : {running}, Pending : {pending}, Terminated : {terminated}, Suspended : {suspended}, Unknown : {unknown} ";
+    
+    foreach(var instance in Running)
+    {
+        response += "workflow instance id : " + instance.Key + " " + JsonSerializer.Serialize(instance.Value) + ", ";
+    }
     return response;
 
 }).Produces<string>();
