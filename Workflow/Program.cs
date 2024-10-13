@@ -5,6 +5,7 @@ using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
 using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,7 +43,48 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPost("/health", async () => {
+// app.Use(async (httpContext, next) =>
+// {
+//     try
+//     {
+//         httpContext.Request.EnableBuffering();
+//         string requestBody = await new StreamReader(httpContext.Request.Body, System.Text.Encoding.UTF8).ReadToEndAsync();
+//         httpContext.Request.Body.Position = 0;
+
+//         Console.WriteLine($"Request path: {httpContext.Request.Path}");
+//         Console.WriteLine($"Request Content-Type: {httpContext.Request.ContentType}");
+//         Console.WriteLine($"Request body: {requestBody}");
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"Exception reading request: {ex.Message}");
+//     }
+
+//     Stream originalBody = httpContext.Response.Body;
+//     try
+//     {
+//         using var memStream = new MemoryStream();
+//         httpContext.Response.Body = memStream;
+
+//         // call to the following middleware 
+//         // response should be produced by one of the following middlewares
+//         await next(httpContext);
+
+//         memStream.Position = 0;
+//         string responseBody = new StreamReader(memStream).ReadToEnd();
+
+//         memStream.Position = 0;
+//         await memStream.CopyToAsync(originalBody);
+//         Console.WriteLine(responseBody);
+//     }
+//     finally
+//     {
+//         httpContext.Response.Body = originalBody;
+//     }
+// });
+
+app.MapPost("/health", async () =>
+{
 
     app.Logger.LogInformation("Hello from Workflow!");
 
@@ -51,7 +93,8 @@ app.MapPost("/health", async () => {
 
 
 // app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
-app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -59,7 +102,6 @@ app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] asy
     }
 
     // app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
-    app.Logger.LogInformation("ce.id {0}");
 
     if (ce.Data.Sleep == 666)
     {
@@ -75,7 +117,8 @@ app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] asy
 
     if (!string.IsNullOrEmpty(ce.Data.AbortHint))
     {
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             status = ce.Data.AbortHint
         };
     }
@@ -93,20 +136,23 @@ app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] asy
             instanceId: workflowId,
             input: orderInfo);
     }
-    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
         app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             Id = workflowId + " error"
         };
     }
 
-    return new StartWorkflowResponse(){
+    return new StartWorkflowResponse()
+    {
         Id = result
-    };   
+    };
 }).Produces<StartWorkflowResponse>();
 
-app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -127,7 +173,8 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
 
     if (!string.IsNullOrEmpty(ce.Data.AbortHint))
     {
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             status = ce.Data.AbortHint
         };
     }
@@ -139,28 +186,32 @@ app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-e
     try
     {
         await workflowClient.ScheduleNewWorkflowAsync(nameof(ExternalSystemWorkflow), workflowId, orderInfo);
-     
+
         var cts = new CancellationTokenSource();
         var options = new ParallelOptions() { MaxDegreeOfParallelism = 50, CancellationToken = cts.Token };
-        await Parallel.ForEachAsync(Enumerable.Range(0, 1000),options,async(index, token) => {
-            await workflowClient.RaiseEventAsync(workflowId,"event-name",$"{index}-{Guid.NewGuid()}");
+        await Parallel.ForEachAsync(Enumerable.Range(0, 1000), options, async (index, token) =>
+        {
+            await workflowClient.RaiseEventAsync(workflowId, "event-name", $"{index}-{Guid.NewGuid()}");
         });
     }
-    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
         app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             Id = workflowId + " error"
         };
     }
 
-    return new StartWorkflowResponse(){
+    return new StartWorkflowResponse()
+    {
         Id = workflowId
-    };   
+    };
 }).Produces<StartWorkflowResponse>();
- 
 
-app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient workflowClient, string runId, int? count) => {
+
+app.MapGet("/status-batch", async (DaprClient daprClient, DaprWorkflowClient workflowClient, string runId, int? count) =>
+{
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -174,9 +225,9 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
     var terminated = 0;
     var suspended = 0;
     var unknown = 0;
-    Dictionary<string,WorkflowState> Running = new Dictionary<string, WorkflowState>();
+    Dictionary<string, WorkflowState> Running = new Dictionary<string, WorkflowState>();
 
-    foreach(var i in Enumerable.Range(0, count.Value))
+    foreach (var i in Enumerable.Range(0, count.Value))
     {
         var instanceId = $"{i}-{runId}";
         var state = await workflowClient.GetWorkflowStateAsync(instanceId);
@@ -199,10 +250,10 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
         if (state.RuntimeStatus == WorkflowRuntimeStatus.Running)
             Running.Add(instanceId, state);
     }
-    
+
     var response = $"Completed : {complete}, Failed : {failed}, Running : {running}, Pending : {pending}, Terminated : {terminated}, Suspended : {suspended}, Unknown : {unknown} ";
-    
-    foreach(var instance in Running)
+
+    foreach (var instance in Running)
     {
         response += "workflow instance id : " + instance.Key + " " + JsonSerializer.Serialize(instance.Value) + ", ";
     }
@@ -211,7 +262,8 @@ app.MapGet("/status-batch", async ( DaprClient daprClient, DaprWorkflowClient wo
 }).Produces<string>();
 
 
-app.MapPost("/fanout-workflow", [Topic("kafka-pubsub", "fanout-workflow")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/fanout-workflow", [Topic("kafka-pubsub", "fanout-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -232,7 +284,8 @@ app.MapPost("/fanout-workflow", [Topic("kafka-pubsub", "fanout-workflow")] async
 
     if (!string.IsNullOrEmpty(ce.Data.AbortHint))
     {
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             status = ce.Data.AbortHint
         };
     }
@@ -249,21 +302,24 @@ app.MapPost("/fanout-workflow", [Topic("kafka-pubsub", "fanout-workflow")] async
             instanceId: workflowId,
             input: orderInfo);
     }
-    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
         app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             Id = workflowId + " error"
         };
     }
 
-    return new StartWorkflowResponse(){
+    return new StartWorkflowResponse()
+    {
         Id = result
-    };   
+    };
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
+app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
     while (!await daprClient.CheckHealthAsync())
     {
         Thread.Sleep(TimeSpan.FromSeconds(5));
@@ -284,7 +340,8 @@ app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient dap
 
     if (!string.IsNullOrEmpty(ce.Data.AbortHint))
     {
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             status = ce.Data.AbortHint
         };
     }
@@ -301,18 +358,79 @@ app.MapPost("/saga", [Topic("kafka-pubsub", "sagaTopic")] async ( DaprClient dap
             instanceId: workflowId,
             input: orderInfo);
     }
-    catch(Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
+    catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown && ex.Status.Detail.StartsWith("an active workflow with ID"))
     {
         app.Logger.LogError(ex, "Workflow already running : {workflowId}", workflowId);
-        return new StartWorkflowResponse(){
+        return new StartWorkflowResponse()
+        {
             Id = workflowId + " error"
         };
     }
 
-    return new StartWorkflowResponse(){
+    return new StartWorkflowResponse()
+    {
         Id = result
-    };    
+    };
 }).Produces<StartWorkflowResponse>();
+
+
+app.MapPost("/schedule-job", [Topic("kafka-pubsub", "schedule-job")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
+    while (!await daprClient.CheckHealthAsync())
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+        app.Logger.LogInformation("waiting...");
+    }
+
+    app.Logger.LogInformation("ce.id {0}", ce.Id);
+
+    string randomData = Guid.NewGuid().ToString();
+    string jobId = ce.Data?.Id ?? $"{Guid.NewGuid().ToString()[..8]}";
+
+    try
+    {
+        var httpClient = new HttpClient();
+        httpClient.BaseAddress = new Uri($"http://localhost:{Environment.GetEnvironmentVariable("DAPR_HTTP_PORT")}");
+
+        using StringContent jsonContent = new(
+            JsonSerializer.Serialize(new
+            {
+                data = new
+                {
+                    scheduled = DateTime.UtcNow
+                },
+                schedule = "@every 5s",
+                //repeats = 5
+            }),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        var result = await httpClient.PostAsync($"v1.0-alpha1/jobs/{jobId}", jsonContent);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, $"Job scheduling error {jobId}");
+        return new StartWorkflowResponse()
+        {
+            Id = jobId + " error"
+        };
+    }
+
+    return new StartWorkflowResponse()
+    {
+        Id = jobId
+    };
+}).Produces<StartWorkflowResponse>();
+
+
+app.MapPost("/job/{jobId}", (string jobId, [FromBody] HelloWorld payload) =>
+{
+    var now = DateTime.UtcNow;
+    var timeSinceScheduled = now.Subtract(payload.scheduled);
+    app.Logger.LogInformation($"job triggered='{jobId}', timeSince='{timeSinceScheduled.TotalSeconds}', timeNow='{now:HH:mm:ss}',  scheduledAt='{payload.scheduled:HH:mm:ss}'");
+    return;
+});
+
 
 app.Run();
 
@@ -320,18 +438,23 @@ public record WorkflowPayload(string RandomData, int Itterations = 1, Guid[]? Da
 
 public record ExternalSystemWorkflowPayload(bool failOnTimeout = false);
 
+public class HelloWorld
+{
+    public DateTime scheduled { get; set; }
+}
+
 public class StartWorklowRequest
 {
     public string Id { get; set; }
     public bool FailOnTimeout { get; set; }
-    public int Sleep {get;set;}
+    public int Sleep { get; set; }
 
     public string AbortHint { get; set; }
 }
 
 public class StartWorkflowResponse
 {
-    public string Id {get; set;}
+    public string Id { get; set; }
 
     public string status { get; set; }
 
@@ -339,7 +462,7 @@ public class StartWorkflowResponse
 
 public class RaiseEvent<T>
 {
-    public string InstanceId {get; set;}
-    public string EventName {get; set;}
+    public string InstanceId { get; set; }
+    public string EventName { get; set; }
     public T EventData { get; set; }
 }

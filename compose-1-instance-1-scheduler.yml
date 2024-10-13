@@ -19,6 +19,7 @@ services:
   workflow-app-a:
     environment:
       - APP_INSTANCE=1
+      - DAPR_HTTP_PORT=3500
     build:
       context: .
       dockerfile: Workflow/Dockerfile
@@ -31,7 +32,7 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.14.1"
+    image: "daprio/daprd:1.14.4"
     command: ["./daprd",
      "-app-id", "workflow-a",
      "-app-port", "5111",
@@ -49,6 +50,7 @@ services:
       kafka:
         condition: service_healthy
     network_mode: "service:workflow-app-a"
+    
   ###########################
   #Client App + Dapr sidecar
   ###########################
@@ -62,7 +64,7 @@ services:
     networks:
       - network
   client-dapr:
-    image: "daprio/daprd:1.14.1"
+    image: "daprio/daprd:1.14.4"
     command: ["./daprd",
     "-app-id", "client",
     "-app-port", "5111",
@@ -79,7 +81,7 @@ services:
   # Dapr placement service
   ############################
   placement:
-    image: "daprio/dapr:1.14.1"
+    image: "daprio/dapr:1.14.4"
     command: ["./placement", 
     "-port", "50005",
     "-log-level","warn"]
@@ -90,11 +92,12 @@ services:
   # # Dapr Scheduler service
   # ############################
   scheduler-0:
-    image: "daprio/dapr:1.14.1"
+    image: "daprio/dapr:1.14.4"
     command: ["./scheduler", 
-    "--port", "50006",
-    "--placement-address", "placement:50005",
-    "--etcd-data-dir", "/var/run/dapr/scheduler",
+      "--etcd-data-dir", "/var/run/dapr/scheduler",
+      "--initial-cluster", "scheduler-0=http://scheduler-0:2380",
+      "--replica-count", "1",
+      "--id","scheduler-0"
     ]
     volumes: 
       - ./dapr_scheduler/0:/var/run/dapr/scheduler
