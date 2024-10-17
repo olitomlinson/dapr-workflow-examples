@@ -13,17 +13,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
-        options.RegisterWorkflow<MonitorWorkflow>();
-        options.RegisterWorkflow<FanOutWorkflow>();
-        options.RegisterWorkflow<ExternalSystemWorkflow>();
-        options.RegisterWorkflow<SagaWorkflow>();
+        var registerWorkflows = Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS");
+        if (string.IsNullOrEmpty(registerWorkflows) || Convert.ToBoolean(registerWorkflows))
+        {
+            options.RegisterWorkflow<MonitorWorkflow>();
+            options.RegisterWorkflow<FanOutWorkflow>();
+            options.RegisterWorkflow<ExternalSystemWorkflow>();
+            options.RegisterWorkflow<SagaWorkflow>();
+        }
 
-        options.RegisterActivity<FastActivity>();
-        options.RegisterActivity<SlowActivity>();
-        options.RegisterActivity<VerySlowActivity>();
-        options.RegisterActivity<AlwaysFailActivity>();
-        options.RegisterActivity<NotifyCompensateActivity>();
-        options.RegisterActivity<NoOpActivity>();
+        var registerActivities = Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES");
+        if (string.IsNullOrEmpty(registerActivities) || Convert.ToBoolean(registerActivities))
+        {
+            options.RegisterActivity<FastActivity>();
+            options.RegisterActivity<SlowActivity>();
+            options.RegisterActivity<VerySlowActivity>();
+            options.RegisterActivity<AlwaysFailActivity>();
+            options.RegisterActivity<NotifyCompensateActivity>();
+            options.RegisterActivity<NoOpActivity>();
+        }
     });
 
 // Add services to the container.
