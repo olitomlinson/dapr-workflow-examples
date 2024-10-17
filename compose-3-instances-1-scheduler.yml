@@ -1,4 +1,4 @@
-version: '3.4'
+version: "3.4"
 services:
   postgres-db:
     image: postgres:16.2-alpine
@@ -8,10 +8,10 @@ services:
       - POSTGRES_PASSWORD=wO2VGDsMKR
       - max_wal_size=2GB
     ports:
-      - '5432:5432'
+      - "5432:5432"
     networks:
       - network
-    volumes: 
+    volumes:
       - postgres-db-16-2:/var/lib/postgresql/data-16-2
   ############################
   # Workflow App + Dapr sidecar
@@ -32,14 +32,24 @@ services:
       - network
   workflow-dapr-a:
     image: "daprio/daprd:1.14.4"
-    command: ["./daprd",
-     "-app-id", "workflow-a",
-     "-app-port", "5111",
-     "-placement-host-address", "placement:50005",
-     "-scheduler-host-address", "scheduler:50006",
-     "-resources-path", "/components",
-     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
-     "-log-level","info"]
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        "-app-port",
+        "5111",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "-log-level",
+        "info",
+      ]
     volumes:
       - "./components/:/components"
       - "./dapr-config/:/dapr-config"
@@ -67,15 +77,26 @@ services:
       - network
   workflow-dapr-b:
     image: "daprio/daprd:1.14.4"
-    command: ["./daprd",
-     "-app-id", "workflow-a",
-     "-app-port", "5111",
-     "-dapr-grpc-port", "50002",
-     "-placement-host-address", "placement:50005",
-     "-scheduler-host-address", "scheduler:50006",
-     "-resources-path", "/components",
-     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
-     "-log-level","info"]
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        "-app-port",
+        "5111",
+        "-dapr-grpc-port",
+        "50002",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "-log-level",
+        "info",
+      ]
     volumes:
       - "./components/:/components"
       - "./dapr-config/:/dapr-config"
@@ -103,15 +124,26 @@ services:
       - network
   workflow-dapr-c:
     image: "daprio/daprd:1.14.4"
-    command: ["./daprd",
-     "-app-id", "workflow-a",
-     "-app-port", "5111",
-     "-dapr-grpc-port", "50003",
-     "-placement-host-address", "placement:50005",
-     "-scheduler-host-address", "scheduler:50006",
-     "-resources-path", "/components",
-     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
-     "-log-level","info"]
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        "-app-port",
+        "5111",
+        "-dapr-grpc-port",
+        "50003",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "-log-level",
+        "info",
+      ]
     volumes:
       - "./components/:/components"
       - "./dapr-config/:/dapr-config"
@@ -135,12 +167,20 @@ services:
       - network
   client-dapr:
     image: "daprio/daprd:1.14.4"
-    command: ["./daprd",
-    "-app-id", "client",
-    "-app-port", "5111",
-    "-dapr-http-port", "3500",
-    "-resources-path", "/components",
-    "-log-level","warn"]
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "client",
+        "-app-port",
+        "5111",
+        "-dapr-http-port",
+        "3500",
+        "-resources-path",
+        "/components",
+        "-log-level",
+        "warn",
+      ]
     volumes:
       - "./components/:/components"
     depends_on:
@@ -152,27 +192,34 @@ services:
   ############################
   placement:
     image: "daprio/dapr:1.14.4"
-    command: ["./placement", 
-    "-port", "50005",
-    "-log-level","warn"]
+    command: ["./placement", "-port", "50005", "-log-level", "warn"]
     networks:
       - network
 
   # ############################
   # # Dapr Scheduler service
   # ############################
-  scheduler:
+  scheduler-0:
     image: "daprio/dapr:1.14.4"
-    command: ["./scheduler", 
-    "--port", "50006",
-    ]
-    volumes: 
-      - ./dapr/scheduler/data/0:/data-default-dapr-scheduler-server-0
+    command:
+      [
+        "./scheduler",
+        "--etcd-data-dir",
+        "/var/run/dapr/scheduler",
+        "--initial-cluster",
+        "scheduler-0=http://scheduler-0:2380",
+        "--replica-count",
+        "1",
+        "--id",
+        "scheduler-0",
+      ]
+    volumes:
+      - ./dapr_scheduler/0:/var/run/dapr/scheduler
     networks:
       - network
 
   ############################
-  # Zookeeper 
+  # Zookeeper
   ############################
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -189,7 +236,7 @@ services:
       - zookeeper_logs:/var/lib/zookeeper/log
       - zookeeper_data:/var/lib/zookeeper/data
   ############################
-  # Kafka 
+  # Kafka
   ############################
   kafka:
     image: confluentinc/cp-kafka:latest
@@ -231,10 +278,10 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_METRICS_PORT: 9997
-      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: 'true'
-      KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: 'true'
-      LOGGING_LEVEL_ROOT: 'error'
-      LOGGING_LEVEL_COM_PROVECTUS: 'error'
+      KAFKA_CLUSTERS_0_AUDIT_TOPICAUDITENABLED: "true"
+      KAFKA_CLUSTERS_0_AUDIT_CONSOLEAUDITENABLED: "true"
+      LOGGING_LEVEL_ROOT: "error"
+      LOGGING_LEVEL_COM_PROVECTUS: "error"
     networks:
       - network
 networks:

@@ -83,14 +83,19 @@ if (app.Environment.IsDevelopment())
 //     }
 // });
 
-app.MapPost("/health", async () =>
+
+app.MapGet("/health", async () =>
 {
+    app.Logger.LogInformation($"appHealth is '{appHealth}'");
 
-    app.Logger.LogInformation("Hello from Workflow!");
-
-    return "Hello from Workflow!";
+    if (!appHealth)
+        throw new Exception("Bad health");
 });
 
+app.MapGet("/health/toggle", async () =>
+{
+    appHealth = !appHealth;
+});
 
 // app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
 app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
@@ -400,7 +405,7 @@ app.MapPost("/schedule-job", [Topic("kafka-pubsub", "schedule-job")] async (Dapr
                     scheduled = DateTime.UtcNow
                 },
                 schedule = "@every 5s",
-                //repeats = 5
+                repeats = 5
             }),
             System.Text.Encoding.UTF8,
             "application/json");
@@ -465,4 +470,9 @@ public class RaiseEvent<T>
     public string InstanceId { get; set; }
     public string EventName { get; set; }
     public T EventData { get; set; }
+}
+
+public partial class Program
+{
+    static bool appHealth = true;
 }
