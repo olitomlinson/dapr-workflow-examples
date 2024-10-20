@@ -44,6 +44,10 @@ var app = builder.Build();
 //app.UseCloudEvents();
 app.MapSubscribeHandler();
 
+app.Logger.LogInformation("REGISTER_WORKFLOWS: " + Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS"));
+app.Logger.LogInformation("REGISTER_ACTIVITIES: " + Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES"));
+app.Logger.LogInformation("DAPR_HTTP_PORT: " + Environment.GetEnvironmentVariable("DAPR_HTTP_PORT"));
+app.Logger.LogInformation("DAPR_GRPC_PORT: " + Environment.GetEnvironmentVariable("DAPR_GRPC_PORT"));
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
