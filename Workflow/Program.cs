@@ -9,12 +9,13 @@ using Microsoft.AspNetCore.Mvc;
 
 
 var builder = WebApplication.CreateBuilder(args);
+bool registerWorkflows = Convert.ToBoolean(Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS"));
+bool registerActivities = Convert.ToBoolean(Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES"));
 
 builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
-        var registerWorkflows = Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS");
-        if (string.IsNullOrEmpty(registerWorkflows) || Convert.ToBoolean(registerWorkflows))
+        if (registerWorkflows)
         {
             options.RegisterWorkflow<MonitorWorkflow>();
             options.RegisterWorkflow<FanOutWorkflow>();
@@ -22,8 +23,7 @@ builder.Services.AddDaprWorkflow(options =>
             options.RegisterWorkflow<SagaWorkflow>();
         }
 
-        var registerActivities = Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES");
-        if (string.IsNullOrEmpty(registerActivities) || Convert.ToBoolean(registerActivities))
+        if (registerActivities)
         {
             options.RegisterActivity<FastActivity>();
             options.RegisterActivity<SlowActivity>();
@@ -44,8 +44,8 @@ var app = builder.Build();
 //app.UseCloudEvents();
 app.MapSubscribeHandler();
 
-app.Logger.LogInformation("REGISTER_WORKFLOWS: " + Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS"));
-app.Logger.LogInformation("REGISTER_ACTIVITIES: " + Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES"));
+app.Logger.LogInformation("REGISTER_WORKFLOWS: " + registerWorkflows);
+app.Logger.LogInformation("REGISTER_ACTIVITIES: " + registerActivities);
 app.Logger.LogInformation("DAPR_HTTP_PORT: " + Environment.GetEnvironmentVariable("DAPR_HTTP_PORT"));
 app.Logger.LogInformation("DAPR_GRPC_PORT: " + Environment.GetEnvironmentVariable("DAPR_GRPC_PORT"));
 // Configure the HTTP request pipeline.

@@ -1,0 +1,20 @@
+version: 1
+common: # optional section for variables shared across apps
+  resourcesPath: /multirun-components # any dapr resources to be shared across apps
+apps:
+  - appID: workflow # optional
+    appDirPath: /Workflow # REQUIRED
+    configFilePath: config/config.yaml # (optional) can be default by convention too, ignore if file is not found.
+    appProtocol: http
+    appPort: 8080
+    daprHttpPort: 3500
+    daprGRPCPort: 50001
+    daprInternalGRPCPort: 48727
+    metricsPort: 9091
+    command: ["dotnet", "run"]
+    env:
+      ASPNETCORE_URLS: http://localhost:5113/
+      DAPR_HTTP_PORT: 3500
+      DAPR_GRPC_PORT: 50001
+    appLogDestination: console # (optional), can be file, console or fileAndConsole. default is fileAndConsole.
+    daprdLogDestination: console
