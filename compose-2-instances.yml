@@ -38,7 +38,7 @@ services:
      "-placement-host-address", "placement:50005",
      "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
-     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
+     "-config", "/dapr-config/config.yml",
      "-log-level","info"]
     volumes:
       - "./components/:/components"
@@ -74,7 +74,7 @@ services:
      "-placement-host-address", "placement:50005",
      "-scheduler-host-address", "scheduler:50006",
      "-resources-path", "/components",
-     "-config", "/dapr-config/config-with-schedule-reminders-feature.yml",
+     "-config", "/dapr-config/config.yml",
      "-log-level","info"]
     volumes:
       - "./components/:/components"

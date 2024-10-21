@@ -47,7 +47,7 @@ services:
         "-resources-path",
         "/components",
         "-config",
-        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "/dapr-config/config.yml",
         "-log-level",
         "info",
       ]
@@ -95,7 +95,7 @@ services:
         "-resources-path",
         "/components",
         "-config",
-        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "/dapr-config/config.yml",
         "-log-level",
         "info",
       ]
@@ -143,7 +143,7 @@ services:
         "-resources-path",
         "/components",
         "-config",
-        "/dapr-config/config-with-schedule-reminders-feature.yml",
+        "/dapr-config/config.yml",
         "-log-level",
         "info",
       ]
