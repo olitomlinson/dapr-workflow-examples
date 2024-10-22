@@ -7,7 +7,7 @@ public class CustomCloudEvent<TData> : Dapr.CloudEvent<TData>
 {
     public CustomCloudEvent(TData data) : base(data)
     {
-        
+
     }
 
     [JsonPropertyName("id")]
@@ -17,5 +17,5 @@ public class CustomCloudEvent<TData> : Dapr.CloudEvent<TData>
     public string Specversion { get; init; }
 
     [JsonPropertyName("my-custom-property")]
-    public string MyCustomProperty { get ;init; }
+    public string MyCustomProperty { get; init; }
 }

@@ -109,8 +109,14 @@ app.MapGet("/health/toggle", async () =>
     appHealth = !appHealth;
 });
 
-// app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
-app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+app.MapPost("/bombed", async () =>
+{
+    app.Logger.LogInformation("BOMBED...");
+});
+
+
+//app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async ([FromHeader(Name = "__partition")] string partition, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+app.MapPost("/monitor-workflow", async ([FromHeader(Name = "__key")] string kafkaKey, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
 {
     while (!await daprClient.CheckHealthAsync())
     {
@@ -118,7 +124,8 @@ app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] asy
         app.Logger.LogInformation("waiting...");
     }
 
-    // app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
+    //app.Logger.LogInformation("ce.id {0}, ce.type {1}, ce.source {2}, ce.specversion {3}, ce.my-custom-property {4}, kafka-partition {5}, customHeader {6}", ce.Id, ce.Type, ce.Source, ce.Specversion, ce.MyCustomProperty, partition, customHeader);
+    app.Logger.LogInformation("path=/monitor-workflow ce.id={0} ce.type={1} kafka-key={2}", ce.Id, ce.Type, kafkaKey);
 
     if (ce.Data.Sleep == 666)
     {
@@ -167,6 +174,20 @@ app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] asy
         Id = result
     };
 }).Produces<StartWorkflowResponse>();
+
+app.MapPost("/monitor-workflow-2", async ([FromHeader(Name = "__key")] string kafkaKey, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
+    app.Logger.LogInformation("path=/monitor-workflow-2 ce.id={0} ce.type={1} kafka-key={2}", ce.Id, ce.Type, kafkaKey);
+
+    return "done";
+}).Produces<string>();
+
+app.MapPost("/monitor-workflow-3", async ([FromHeader(Name = "__key")] string kafkaKey, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
+{
+    app.Logger.LogInformation("path=/monitor-workflow-3 ce.id={0} ce.type={1} kafka-key={2} ce.data.id={3}", ce.Id, ce.Type, kafkaKey, ce.Data.Id);
+
+    return "done";
+}).Produces<string>();
 
 app.MapPost("/start-raise-event-workflow", [Topic("kafka-pubsub", "start-raise-event-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
 {

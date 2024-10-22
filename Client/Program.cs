@@ -1,5 +1,6 @@
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Dapr;
 using Dapr.Client;
 using Grpc.Net.Client;
@@ -56,9 +57,9 @@ app.MapPost("/start/monitor-workflow", async (DaprClient daprClient, string runI
         var metadata = new Dictionary<string, string>
         {
             { "cloudevent.id", request.Id },
-            { "cloudevent.type", "Continue As New"} ,
+            { "cloudevent.type", "CONTINUE_AS_NEW_2"},
             { "my-custom-property", "foo" },
-            { "partitionKey", Guid.NewGuid().ToString() }
+            { "partitionKey", JsonSerializer.Serialize(new { Foo = 123, Bar = "barbar" })}
         };
 
         // var ce = new Workflow.CustomCloudEvent<StartWorkflowRequest>(request) { 

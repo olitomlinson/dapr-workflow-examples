@@ -16,3 +16,5 @@ spec:
       value: "none"
     - name: consumeRetryEnabled
       value: "true"
+    - name: escapeHeaders
+      value: "true"

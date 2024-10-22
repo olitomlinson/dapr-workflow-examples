@@ -1,0 +1,18 @@
+apiVersion: dapr.io/v2alpha1
+kind: Subscription
+metadata:
+  name: kafka-pubsub-subscriber
+spec:
+  pubsubname: kafka-pubsub
+  topic: monitor-workflow
+  routes:
+    rules:
+      - match: event.data.id == "0-103"
+        path: /monitor-workflow-3
+      - match: event.type == "CONTINUE_AS_NEW"
+        path: /monitor-workflow
+      - match: event.type == "CONTINUE_AS_NEW_2"
+        path: /monitor-workflow-2
+    default: /bombed
+scopes:
+  - workflow-a
