@@ -18,7 +18,8 @@ services:
   ############################
   workflow-app-a:
     environment:
-      - APP_INSTANCE=1
+      - REGISTER_WORKFLOWS=true
+      - REGISTER_ACTIVITIES=true
     build:
       context: .
       dockerfile: Workflow/Dockerfile
@@ -54,7 +55,8 @@ services:
   workflow-app-b:
     environment:
       - DAPR_GRPC_PORT=50002
-      - APP_INSTANCE=2
+      - REGISTER_WORKFLOWS=true
+      - REGISTER_ACTIVITIES=true
     build:
       context: .
       dockerfile: Workflow/Dockerfile
@@ -89,7 +91,8 @@ services:
   workflow-app-c:
     environment:
       - DAPR_GRPC_PORT=50003
-      - APP_INSTANCE=3
+      - REGISTER_WORKFLOWS=true
+      - REGISTER_ACTIVITIES=true
     build:
       context: .
       dockerfile: Workflow/Dockerfile

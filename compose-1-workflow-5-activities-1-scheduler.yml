@@ -1,4 +1,3 @@
-version: "3.4"
 services:
   postgres-db:
     image: postgres:16.2-alpine
@@ -32,7 +31,7 @@ services:
     networks:
       - network
   workflow-dapr-a:
-    image: "daprio/daprd:1.14.4"
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
     command:
       [
         "./daprd",
@@ -48,6 +47,10 @@ services:
         "/components",
         "-config",
         "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "true",
+        "-register-activity-backend",
+        "false",
         "-log-level",
         "info",
       ]
@@ -65,20 +68,17 @@ services:
   ############################
   workflow-app-b:
     environment:
-      - DAPR_GRPC_PORT=50002
-      - REGISTER_WORKFLOWS=false
-      - REGISTER_ACTIVITIES=true
+      - REGISTER_WORKFLOWS=true
+      - REGISTER_ACTIVITIES=false
     build:
       context: .
       dockerfile: Workflow/Dockerfile
-    ports:
-      - "3501:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
     depends_on:
       - placement
     networks:
       - network
   workflow-dapr-b:
-    image: "daprio/daprd:1.14.4"
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
     command:
       [
         "./daprd",
@@ -86,8 +86,6 @@ services:
         "workflow-a",
         "-app-port",
         "5111",
-        "-dapr-grpc-port",
-        "50002",
         "-placement-host-address",
         "placement:50005",
         "-scheduler-host-address",
@@ -96,6 +94,10 @@ services:
         "/components",
         "-config",
         "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "true",
+        "-register-activity-backend",
+        "false",
         "-log-level",
         "info",
       ]
@@ -111,7 +113,58 @@ services:
   ############################
   # Workflow App + Dapr sidecar
   ############################
-  workflow-app-c:
+  activity-app-a:
+    environment:
+      - DAPR_GRPC_PORT=50002
+      - REGISTER_WORKFLOWS=false
+      - REGISTER_ACTIVITIES=true
+    build:
+      context: .
+      dockerfile: Workflow/Dockerfile
+    ports:
+      - "3501:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
+    depends_on:
+      - placement
+    networks:
+      - network
+  activity-dapr-a:
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
+    command: [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        # "-app-port",
+        # "5111",
+        "-dapr-grpc-port",
+        "50002",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "false",
+        "-register-activity-backend",
+        "true",
+        "-log-level",
+        "info",
+      ]
+    volumes:
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    network_mode: "service:activity-app-a"
+  ############################
+  # Workflow App + Dapr sidecar
+  ############################
+  activity-app-b:
     environment:
       - DAPR_GRPC_PORT=50003
       - REGISTER_WORKFLOWS=false
@@ -125,15 +178,14 @@ services:
       - placement
     networks:
       - network
-  workflow-dapr-c:
-    image: "daprio/daprd:1.14.4"
-    command:
-      [
+  activity-dapr-b:
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
+    command: [
         "./daprd",
         "-app-id",
         "workflow-a",
-        "-app-port",
-        "5111",
+        # "-app-port",
+        # "5111",
         "-dapr-grpc-port",
         "50003",
         "-placement-host-address",
@@ -144,6 +196,10 @@ services:
         "/components",
         "-config",
         "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "false",
+        "-register-activity-backend",
+        "true",
         "-log-level",
         "info",
       ]
@@ -155,7 +211,148 @@ services:
         condition: service_started
       kafka:
         condition: service_healthy
-    network_mode: "service:workflow-app-c"
+    network_mode: "service:activity-app-b"
+  ############################
+  # Workflow App + Dapr sidecar
+  ############################
+  activity-app-c:
+    environment:
+      - DAPR_GRPC_PORT=50004
+      - REGISTER_WORKFLOWS=false
+      - REGISTER_ACTIVITIES=true
+    build:
+      context: .
+      dockerfile: Workflow/Dockerfile
+    ports:
+      - "3503:3500" # only important so we can reach the Dapr HTTP sidecar from the host for testing purposes
+    depends_on:
+      - placement
+    networks:
+      - network
+  activity-dapr-c:
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
+    command: [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        # "-app-port",
+        # "5111",
+        "-dapr-grpc-port",
+        "50004",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "false",
+        "-register-activity-backend",
+        "true",
+        "-log-level",
+        "info",
+      ]
+    volumes:
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    network_mode: "service:activity-app-c"
+  ############################
+  # Workflow App + Dapr sidecar
+  ############################
+  activity-app-d:
+    environment:
+      - REGISTER_WORKFLOWS=false
+      - REGISTER_ACTIVITIES=true
+    build:
+      context: .
+      dockerfile: Workflow/Dockerfile
+    depends_on:
+      - placement
+    networks:
+      - network
+  activity-dapr-d:
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "false",
+        "-register-activity-backend",
+        "true",
+        "-log-level",
+        "info",
+      ]
+    volumes:
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    network_mode: "service:activity-app-d"
+    ############################
+  # Workflow App + Dapr sidecar
+  ############################
+  activity-app-e:
+    environment:
+      - REGISTER_WORKFLOWS=false
+      - REGISTER_ACTIVITIES=true
+    build:
+      context: .
+      dockerfile: Workflow/Dockerfile
+    depends_on:
+      - placement
+    networks:
+      - network
+  activity-dapr-e:
+    image: "olivertomlinsondotmatics/daprd:dev-linux-arm64"
+    command:
+      [
+        "./daprd",
+        "-app-id",
+        "workflow-a",
+        "-placement-host-address",
+        "placement:50005",
+        "-scheduler-host-address",
+        "scheduler-0:50006",
+        "-resources-path",
+        "/components",
+        "-config",
+        "/dapr-config/config.yml",
+        "-register-workflow-backend",
+        "false",
+        "-register-activity-backend",
+        "true",
+        "-log-level",
+        "info",
+      ]
+    volumes:
+      - "./components/:/components"
+      - "./dapr-config/:/dapr-config"
+    depends_on:
+      postgres-db:
+        condition: service_started
+      kafka:
+        condition: service_healthy
+    network_mode: "service:activity-app-e"
   ###########################
   #Client App + Dapr sidecar
   ###########################
@@ -165,7 +362,7 @@ services:
       dockerfile: Client/Dockerfile
     ports:
       - "5112:5111"
-      - "3503:3500"
+      - "3504:3500"
     networks:
       - network
   client-dapr:

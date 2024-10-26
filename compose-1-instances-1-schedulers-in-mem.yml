@@ -18,7 +18,8 @@ services:
   ############################
   workflow-app-a:
     environment:
-      - APP_INSTANCE=1
+      - REGISTER_WORKFLOWS=true
+      - REGISTER_ACTIVITIES=true
     build:
       context: .
       dockerfile: Workflow/Dockerfile

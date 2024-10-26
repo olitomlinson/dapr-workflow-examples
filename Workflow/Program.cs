@@ -21,6 +21,8 @@ builder.Services.AddDaprWorkflow(options =>
             options.RegisterWorkflow<FanOutWorkflow>();
             options.RegisterWorkflow<ExternalSystemWorkflow>();
             options.RegisterWorkflow<SagaWorkflow>();
+            options.RegisterWorkflow<ThrottleWorkflow>();
+            options.RegisterWorkflow<ConstrainedWorkflow>();
         }
 
         if (registerActivities)
@@ -31,6 +33,9 @@ builder.Services.AddDaprWorkflow(options =>
             options.RegisterActivity<AlwaysFailActivity>();
             options.RegisterActivity<NotifyCompensateActivity>();
             options.RegisterActivity<NoOpActivity>();
+            options.RegisterActivity<RaiseProceedEventActivity>();
+            options.RegisterActivity<RaiseSignalEventActivity>();
+            options.RegisterActivity<RaiseWaitEventActivity>();
         }
     });
 
