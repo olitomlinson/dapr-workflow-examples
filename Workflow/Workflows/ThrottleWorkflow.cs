@@ -7,39 +7,38 @@ namespace WorkflowConsoleApp.Workflows
     {
         public override async Task<bool> RunAsync(WorkflowContext context, ThrottleState state)
         {
-            // create capacity by handling signals first...
-            context.SetCustomStatus("CREATE CAPACITY");
+            // 1. Handle any signals first... (which will create capacity for step 2)
             while (state.PendingSignals.Any())
             {
                 var signal1 = state.PendingSignals.Dequeue();
                 state.ActiveWaits.Remove(signal1.InstanceId);
 
-                context.ContinueAsNew(state, true);
-                return true;
+                if (!state.PendingSignals.Any())
+                {
+                    // Don't technically have to do this, but it allows us to do a 
+                    // GET on the workflow and see the state accurately
+                    context.ContinueAsNew(state, true);
+                    return true;
+                }
             }
 
-            // consume capacity by starting new work...
-            context.SetCustomStatus("CONSUME CAPACITY");
-
+            // 2. Ensure that enough work is active (up to the Max Concurrency limit)
             while (state.PendingWaits.Any() &&
                 (state.ActiveWaits.Count() < state.MaxConcurrency))
             {
-                //looks like there is some work to do...
                 WaitEvent waitEvent = state.PendingWaits.Dequeue();
                 state.ActiveWaits.Add(waitEvent.InstanceId, waitEvent);
 
-                // this doesn't work due to a missing implementation in the wf runtime
-                //context.SendEvent(waitEvent.InstanceId, waitEvent.ProceedEventName, null);
-
-                // so we have to do it via an activity instead...
+                // https://github.com/dapr/dapr/issues/8243   
+                // context.SendEvent(waitEvent.InstanceId, waitEvent.ProceedEventName, null);
                 await context.CallActivityAsync<bool>(nameof(RaiseProceedEventActivity), new Tuple<string, string>(waitEvent.InstanceId, waitEvent.ProceedEventName));
             }
 
 
-            //nothing to do, other than wait for a completion event or a wait event
+            // 3. Wait for a `wait` or `signal` from a Workflow
             var wait = context.WaitForExternalEventAsync<WaitEvent>("wait");
             var signal = context.WaitForExternalEventAsync<SignalEvent>("signal");
-            var adjust = context.WaitForExternalEventAsync<string>("adjust");
+            var adjust = context.WaitForExternalEventAsync<int>("adjust-concurrency");
 
             context.SetCustomStatus($"WAITING - Max: {state.MaxConcurrency}, ActiveWaits: {state.ActiveWaits.Count()}, PendingWaits: {state.PendingWaits.Count()} ");
             var winner = await Task.WhenAny(wait, signal, adjust);
@@ -48,7 +47,7 @@ namespace WorkflowConsoleApp.Workflows
             else if (winner == signal)
                 state.PendingSignals.Enqueue(signal.Result);
             else if (winner == adjust)
-                state.MaxConcurrency = Convert.ToInt32(adjust.Result);
+                state.MaxConcurrency = adjust.Result;
             else
                 throw new Exception("unknown event");
 
