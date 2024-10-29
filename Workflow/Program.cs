@@ -5,13 +5,14 @@ using WorkflowConsoleApp.Activities;
 using WorkflowConsoleApp.Workflows;
 using workflow;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
+using WorkflowConsoleApp;
 
 
 var builder = WebApplication.CreateBuilder(args);
 bool registerWorkflows = Convert.ToBoolean(Environment.GetEnvironmentVariable("REGISTER_WORKFLOWS"));
 bool registerActivities = Convert.ToBoolean(Environment.GetEnvironmentVariable("REGISTER_ACTIVITIES"));
 
+builder.Services.AddHttpClient();
 builder.Services.AddDaprClient();
 builder.Services.AddDaprWorkflow(options =>
     {
@@ -43,6 +44,12 @@ builder.Services.AddDaprWorkflow(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddHttpClient<DaprJobsService>(
+    client =>
+    {
+        client.BaseAddress = new Uri($"http://localhost:{Environment.GetEnvironmentVariable("DAPR_HTTP_PORT")}/v1.0-alpha1/jobs/");
+    });
 
 var app = builder.Build();
 
@@ -101,18 +108,26 @@ if (app.Environment.IsDevelopment())
 // });
 
 
-app.MapGet("/health", async () =>
+app.MapGet("/health", async (DaprJobsService jobsService) =>
 {
-    app.Logger.LogInformation($"appHealth is '{appHealth}'");
-
-    if (!appHealth)
-        throw new Exception("Bad health");
+    await jobsService.EnsureThrottleJobIsRunning();
+    app.Logger.LogInformation($"Health is good");
 });
 
-app.MapGet("/health/toggle", async () =>
+app.MapPost("/job/ensurethrottle", async (DaprWorkflowClient workflowClient) =>
 {
-    appHealth = !appHealth;
+    var state = await workflowClient.GetWorkflowStateAsync("throttle", false);
+    if (state.Exists && state.IsWorkflowRunning)
+        return;
+
+    app.Logger.LogWarning($"throttle workflow does not exist, attempting to schedule it");
+    await workflowClient.ScheduleNewWorkflowAsync(nameof(ThrottleWorkflow), "throttle", new ThrottleState { MaxConcurrency = 5 });
 });
+
+// app.MapGet("/health/toggle", async () =>
+// {
+//     appHealth = !appHealth;
+// });
 
 // app.MapPost("/start", [Topic("kafka-pubsub", "workflowTopic")] async ( [FromHeader(Name = "__partition")] string partition, [FromHeader(Name = "my-custom-property")] string customHeader, DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) => {
 app.MapPost("/monitor-workflow", [Topic("kafka-pubsub", "monitor-workflow")] async (DaprClient daprClient, DaprWorkflowClient workflowClient, CustomCloudEvent<StartWorklowRequest>? ce) =>
@@ -445,13 +460,13 @@ app.MapPost("/schedule-job", [Topic("kafka-pubsub", "schedule-job")] async (Dapr
 }).Produces<StartWorkflowResponse>();
 
 
-app.MapPost("/job/{jobId}", (string jobId, [FromBody] HelloWorld payload) =>
-{
-    var now = DateTime.UtcNow;
-    var timeSinceScheduled = now.Subtract(payload.scheduled);
-    app.Logger.LogInformation($"job triggered='{jobId}', timeSince='{timeSinceScheduled.TotalSeconds}', timeNow='{now:HH:mm:ss}',  scheduledAt='{payload.scheduled:HH:mm:ss}'");
-    return;
-});
+// app.MapPost("/job/{jobId}", (string jobId, [FromBody] HelloWorld payload) =>
+// {
+//     var now = DateTime.UtcNow;
+//     var timeSinceScheduled = now.Subtract(payload.scheduled);
+//     app.Logger.LogInformation($"job triggered='{jobId}', timeSince='{timeSinceScheduled.TotalSeconds}', timeNow='{now:HH:mm:ss}',  scheduledAt='{payload.scheduled:HH:mm:ss}'");
+//     return;
+// });
 
 
 app.Run();
@@ -470,16 +485,13 @@ public class StartWorklowRequest
     public string Id { get; set; }
     public bool FailOnTimeout { get; set; }
     public int Sleep { get; set; }
-
     public string AbortHint { get; set; }
 }
 
 public class StartWorkflowResponse
 {
     public string Id { get; set; }
-
     public string status { get; set; }
-
 }
 
 public class RaiseEvent<T>
@@ -487,9 +499,4 @@ public class RaiseEvent<T>
     public string InstanceId { get; set; }
     public string EventName { get; set; }
     public T EventData { get; set; }
-}
-
-public partial class Program
-{
-    static bool appHealth = true;
 }

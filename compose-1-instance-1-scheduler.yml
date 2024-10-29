@@ -41,7 +41,12 @@ services:
      "-scheduler-host-address", "scheduler-0:50006",
      "-resources-path", "/components",
      "-config", "/dapr-config/config.yml",
-     "-log-level","info"]
+     "-log-level","info",
+     "-enable-app-health-check", "true",
+     "-app-health-check-path", "/health",
+     "-app-health-probe-interval", "10",
+     "-app-health-probe-timeout", "1000",
+     "-app-health-threshold", "1"]
     volumes:
       - "./components/:/components"
       - "./dapr-config/:/dapr-config"
