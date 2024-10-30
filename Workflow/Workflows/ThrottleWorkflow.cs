@@ -7,11 +7,15 @@ namespace WorkflowConsoleApp.Workflows
     {
         public override async Task<bool> RunAsync(WorkflowContext context, ThrottleState state)
         {
+            #region Convenience functions
             Action<LogLevel, string> log = (LogLevel, message) =>
             {
                 if (LogLevel >= state.RuntimeConfig.logLevel)
                     state.PersistentLog.Add(message);
             };
+            #endregion
+
+            #region Optimisations & Deadlock handling
 
             // 1. Sometimes a downstream workflow will not send it's signal, the consequence of this happening is that
             // eventually with enough failures, the semaphore will become blocked and no new downstream workflows will 
@@ -48,6 +52,8 @@ namespace WorkflowConsoleApp.Workflows
                 }
             }
 
+            #endregion
+
             // 3. Ensure that enough work is active (up to the Max Concurrency limit)
             while (state.PendingWaits.Any() &&
                 (state.ActiveWaits.Count() < state.RuntimeConfig.MaxConcurrency))
@@ -73,8 +79,10 @@ namespace WorkflowConsoleApp.Workflows
             if (winner == wait)
             {
                 cts.Cancel();
+                # region Expiry handling
                 if (state.RuntimeConfig.DefaultTTLInSeconds > 0 && !wait.Result.Expiry.HasValue)
                     wait.Result.Expiry = context.CurrentUtcDateTime.AddSeconds(state.RuntimeConfig.DefaultTTLInSeconds);
+                #endregion
                 state.PendingWaits.Enqueue(wait.Result);
             }
             else if (winner == signal)
