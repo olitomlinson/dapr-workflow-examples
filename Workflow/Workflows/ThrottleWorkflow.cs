@@ -7,7 +7,33 @@ namespace WorkflowConsoleApp.Workflows
     {
         public override async Task<bool> RunAsync(WorkflowContext context, ThrottleState state)
         {
-            // 1. Handle any signals first... (which will create capacity for step 2)
+            Action<LogLevel, string> log = (LogLevel, message) =>
+            {
+                if (LogLevel >= state.RuntimeConfig.logLevel)
+                    state.PersistentLog.Add(message);
+            };
+
+            // 1. Sometimes a downstream workflow will not send it's signal, the consequence of this happening is that
+            // eventually with enough failures, the semaphore will become blocked and no new downstream workflows will 
+            // be able to progress.
+
+            // So, every 15s we can scan the 'activeWaits' and if it has exceeded its ttl (default 60s) then a virtual signal 
+            // is injected to unblock the sempahore.
+
+            var expiryWatermark = context.CurrentUtcDateTime;
+            var expiryPurgeCount = 0;
+            foreach (var activeWait in state.ActiveWaits
+                .Where(x => x.Value.Expiry.HasValue)
+                .Where(x => expiryWatermark > x.Value.Expiry))
+            {
+                expiryPurgeCount += 1;
+                log(LogLevel.Debug, $"active wait for {activeWait.Key} has expired [ts-now: {expiryWatermark}, ts-expiry: {activeWait.Value.Expiry.Value}, delta: {activeWait.Value.Expiry.Value.Subtract(expiryWatermark).TotalSeconds} seconds]");
+                state.PendingSignals.Enqueue(new SignalEvent() { InstanceId = activeWait.Key });
+            }
+            if (expiryPurgeCount > 0)
+                log(LogLevel.Info, $"purged {expiryPurgeCount} expired active wait(s)");
+
+            // 2. Handle any signals first... (which will free-up capacity in the semaphore for step 3)
             while (state.PendingSignals.Any())
             {
                 var signal1 = state.PendingSignals.Dequeue();
@@ -22,12 +48,12 @@ namespace WorkflowConsoleApp.Workflows
                 }
             }
 
-            // 2. Ensure that enough work is active (up to the Max Concurrency limit)
+            // 3. Ensure that enough work is active (up to the Max Concurrency limit)
             while (state.PendingWaits.Any() &&
-                (state.ActiveWaits.Count() < state.MaxConcurrency))
+                (state.ActiveWaits.Count() < state.RuntimeConfig.MaxConcurrency))
             {
                 WaitEvent waitEvent = state.PendingWaits.Dequeue();
-                state.ActiveWaits.Add(waitEvent.InstanceId, waitEvent);
+                state.ActiveWaits.TryAdd(waitEvent.InstanceId, waitEvent);
 
                 // https://github.com/dapr/dapr/issues/8243   
                 // context.SendEvent(waitEvent.InstanceId, waitEvent.ProceedEventName, null);
@@ -35,19 +61,35 @@ namespace WorkflowConsoleApp.Workflows
             }
 
 
-            // 3. Wait for a `wait` or `signal` from a Workflow
+            // 4. Wait for a `wait` or `signal` from a Workflow (or `adjust` or `expiryScan` tick)
             var wait = context.WaitForExternalEventAsync<WaitEvent>("wait");
             var signal = context.WaitForExternalEventAsync<SignalEvent>("signal");
-            var adjust = context.WaitForExternalEventAsync<int>("adjust-concurrency");
+            var adjust = context.WaitForExternalEventAsync<RuntimeConfig>("adjust");
+            var cts = new CancellationTokenSource();
+            var expiryScan = context.CreateTimer(TimeSpan.FromSeconds(15), cts.Token);
 
-            context.SetCustomStatus($"WAITING - Max: {state.MaxConcurrency}, ActiveWaits: {state.ActiveWaits.Count()}, PendingWaits: {state.PendingWaits.Count()} ");
-            var winner = await Task.WhenAny(wait, signal, adjust);
+            context.SetCustomStatus(new ThrottleSummary { Status = "WAITING", MaxWaits = state.RuntimeConfig.MaxConcurrency, ActiveWaits = state.ActiveWaits.Count(), PendingWaits = state.PendingWaits.Count() });
+            var winner = await Task.WhenAny(wait, signal, adjust, expiryScan);
             if (winner == wait)
+            {
+                cts.Cancel();
+                if (state.RuntimeConfig.DefaultTTLInSeconds > 0 && !wait.Result.Expiry.HasValue)
+                    wait.Result.Expiry = context.CurrentUtcDateTime.AddSeconds(state.RuntimeConfig.DefaultTTLInSeconds);
                 state.PendingWaits.Enqueue(wait.Result);
+            }
             else if (winner == signal)
+            {
+                cts.Cancel();
                 state.PendingSignals.Enqueue(signal.Result);
+            }
             else if (winner == adjust)
-                state.MaxConcurrency = adjust.Result;
+            {
+                cts.Cancel();
+                state.RuntimeConfig = adjust.Result;
+            }
+            else if (winner == expiryScan)
+            { // no-op 
+            }
             else
                 throw new Exception("unknown event");
 
@@ -61,6 +103,8 @@ namespace WorkflowConsoleApp.Workflows
         public string InstanceId { get; set; }
 
         public string ProceedEventName { get; set; }
+
+        public DateTime? Expiry { get; set; }
     }
 
     public class SignalEvent
@@ -70,12 +114,37 @@ namespace WorkflowConsoleApp.Workflows
 
     public class ThrottleState
     {
-        public int MaxConcurrency { get; set; }
+        public RuntimeConfig RuntimeConfig = new RuntimeConfig();
 
         public Queue<WaitEvent> PendingWaits = new Queue<WaitEvent>();
 
         public Dictionary<string, WaitEvent> ActiveWaits = new Dictionary<string, WaitEvent>();
 
         public Queue<SignalEvent> PendingSignals = new Queue<SignalEvent>();
+
+        public List<string> PersistentLog = new List<string>();
+    }
+
+    public class RuntimeConfig
+    {
+        public int MaxConcurrency { get; set; } = 10;
+
+        public int DefaultTTLInSeconds { get; set; } = 60;
+
+        public LogLevel logLevel { get; set; } = LogLevel.Info;
+    }
+
+    public enum LogLevel
+    {
+        Debug = 0,
+        Info = 1,
+    }
+
+    public class ThrottleSummary
+    {
+        public string Status { get; set; }
+        public int MaxWaits { get; set; }
+        public int ActiveWaits { get; set; }
+        public int PendingWaits { get; set; }
     }
 }

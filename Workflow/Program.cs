@@ -114,14 +114,46 @@ app.MapGet("/health", async (DaprJobsService jobsService) =>
     app.Logger.LogInformation($"Health is good");
 });
 
+app.MapGet("/throttle/{id}/status", async (string id, DaprWorkflowClient workflowClient) =>
+{
+    var throttle = await workflowClient.GetWorkflowStateAsync(id, true);
+    var result = new
+    {
+        Summary = throttle.ReadCustomStatusAs<ThrottleSummary>(),
+        Logs = throttle.ReadInputAs<ThrottleState>()?.PersistentLog
+    };
+    return result;
+});
+
 app.MapPost("/job/ensurethrottle", async (DaprWorkflowClient workflowClient) =>
 {
-    var state = await workflowClient.GetWorkflowStateAsync("throttle", false);
-    if (state.Exists && state.IsWorkflowRunning)
+    var createThrottleWorkflow = false;
+
+    try
+    {
+        var throttle = await workflowClient.GetWorkflowStateAsync("throttle", false);
+        if (!throttle.Exists || !throttle.IsWorkflowRunning)
+            createThrottleWorkflow = true;
+    }
+    catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.Unknown)
+    {
+        // TODO : refactor this when the wfruntime handles 404 workflows properly
+        createThrottleWorkflow = true;
+    }
+
+    if (!createThrottleWorkflow)
         return;
 
     app.Logger.LogWarning($"throttle workflow does not exist, attempting to schedule it");
-    await workflowClient.ScheduleNewWorkflowAsync(nameof(ThrottleWorkflow), "throttle", new ThrottleState { MaxConcurrency = 5 });
+    var state = new ThrottleState()
+    {
+        RuntimeConfig = new RuntimeConfig()
+        {
+            MaxConcurrency = 3,
+            DefaultTTLInSeconds = 30
+        }
+    };
+    await workflowClient.ScheduleNewWorkflowAsync(nameof(ThrottleWorkflow), "throttle", state);
 });
 
 // app.MapGet("/health/toggle", async () =>

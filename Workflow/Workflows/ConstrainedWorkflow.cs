@@ -33,7 +33,7 @@ namespace WorkflowConsoleApp.Workflows
             var signalEvent = new SignalEvent() { InstanceId = context.InstanceId };
             // https://github.com/dapr/dapr/issues/8243 
             // context.SendEvent("throttle", "signal", signalEvent);
-            await context.CallActivityAsync<bool>(nameof(RaiseSignalEventActivity), new Tuple<string, SignalEvent>("throttle", signalEvent));
+            //await context.CallActivityAsync<bool>(nameof(RaiseSignalEventActivity), new Tuple<string, SignalEvent>("throttle", signalEvent));
             context.SetCustomStatus("SIGNALLED");
 
             // 5. Echo back how long this workflow waited for due to throttling

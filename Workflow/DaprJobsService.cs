@@ -22,7 +22,7 @@ namespace WorkflowConsoleApp
                     {
                         scheduled = DateTime.UtcNow
                     },
-                    schedule = "@every 5s"
+                    schedule = "@every 10s"
                 });
                 logger.LogInformation($"CREATE job `ensure-throttle` result : {createResult.StatusCode.ToString()}");
                 createResult.EnsureSuccessStatusCode();
